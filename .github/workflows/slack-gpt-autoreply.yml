@@ -1,8 +1,10 @@
 name: Slack GPT auto-reply
 
 on:
-  schedule:
-    - cron: "*/5 * * * *"
+  # 定时运行已关闭：私有仓库每 5 分钟跑一次会很快用完 Actions 免费额度。
+  # 需要时恢复下面两行（并配置好 Slack / OpenAI 密钥）。
+  # schedule:
+  #   - cron: "*/5 * * * *"
   workflow_dispatch:
 
 permissions:
