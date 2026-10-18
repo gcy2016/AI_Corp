@@ -9,7 +9,7 @@ pick = lambda key: glob.glob(f'{here}/{pre}*{key}*')[0]
 bpy.ops.wm.read_factory_settings(use_empty=True)
 sc = bpy.context.scene
 sc.render.engine = 'CYCLES'; sc.cycles.device = 'CPU'; sc.cycles.samples = 48; sc.cycles.use_denoising = True
-sc.render.resolution_x, sc.render.resolution_y = 800, 1000; sc.view_settings.view_transform = 'AgX'
+sc.render.resolution_x, sc.render.resolution_y = 800, 1000; sc.view_settings.view_transform = 'AgX'; sc.view_settings.exposure = -1.3 if hdri else 0
 # 1. 树干：弯曲、下粗上细，根部向外鼓出，顶部分出两根粗枝
 bm = bmesh.new()
 def tube(path, radii, seg=32):
@@ -69,7 +69,7 @@ if hdri:
 else:
     e = wn.nodes.new('ShaderNodeTexSky')
 wn.links.new(e.outputs['Color'], wn.nodes['Background'].inputs['Color'])
-sun = bpy.data.objects.new('sun', bpy.data.lights.new('sun', 'SUN')); sun.data.energy = 4; sun.data.angle = 0.05
+sun = bpy.data.objects.new('sun', bpy.data.lights.new('sun', 'SUN')); sun.data.energy = 1.2 if hdri else 4; sun.data.angle = 0.05
 sun.rotation_euler = (math.radians(55), 0, math.radians(-40)); sc.collection.objects.link(sun)
 # 6. 相机 + Cycles 渲染
 cam = bpy.data.objects.new('cam', bpy.data.cameras.new('cam')); sc.collection.objects.link(cam); sc.camera = cam
