@@ -1,0 +1,32 @@
+# 未来的一天 · 动画短片
+
+根据 AI_Corp #24 留言（GPT 撰写的《未来的一天》）制作的 2.5D 扁平插画风动画，12 个时段，约 8 分 17 秒，1920×1080 / 30fps，带中文字幕、无配音。
+
+所有画面都是代码逐帧绘制的（Canvas 2D，原生 JS，无第三方依赖）。
+
+## 目录
+| 路径 | 内容 |
+|---|---|
+| `src/film.html` | 入口。**双击用浏览器打开就能预览全片**：空格暂停，←/→ 跳 3 秒，数字键 1–9、0、-、= 跳到第 1–12 个场景 |
+| `src/common.js` | 公共组件：人物、机械臂、服务机器人、车辆、树木山体、卡片/按钮/图表、字幕、时间标签 |
+| `src/s01_wakeup.js` … `s12_sleep.js` | 12 个场景，一个文件一个时段，文件顶部 `SUBS` 是该场景的字幕/台词（秒为单位，相对场景开头；`who:'AI'` 为 AI 助手，`who:'ME'` 为居住者） |
+| `src/render.py` | 渲染成 MP4、导出截图、生成时间轴和 SRT |
+| `src/timeline.json` / `src/未来的一天.srt` | 全片字幕时间轴（由 render.py 生成） |
+| `dub/dub.py` / `dub/Muse配音方案.md` | 配音脚本和给 Muse 的操作说明 |
+
+## 渲染
+    pip install playwright
+    python -m playwright install chromium
+    cd src
+    python render.py video 未来的一天.mp4     # 整片，约 15 分钟，需要 ffmpeg
+    python render.py scene 7 3 10 20           # 第 7 个场景第 3/10/20 秒截图 → stills/
+    python render.py timeline                  # 改了台词后重新生成 timeline.json 和 SRT
+
+## 修改
+- 改台词：改对应场景文件的 `SUBS`，然后 `python render.py timeline`，配音脚本会自动读取新的时间轴。
+- 改时长：场景文件里的 `DUR`；场景之间自动做 1 秒交叉淡化（`film.html` 里的 `XF`）。
+- 字体用 Noto Sans CJK SC；Windows 上会回退到微软雅黑，排版会有细微差别。
+
+## 说明
+- 原文 08:00 写“前往山谷”，09:00 又“回到家中”，14:00 才“抵达山谷入口”，时间线有矛盾。视频按原文逐段呈现，没有改动剧情，有需要可以让 GPT 调整原文后再改。
+- 原文里没写清楚的细节（菜名、地名、数值、界面内容等）都由 Claude 自行设定，如 07:00 记忆中的家常菜设定为“外婆的葱油饼”，23:00 的明日安排与之呼应。

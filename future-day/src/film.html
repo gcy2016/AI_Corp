@@ -1,0 +1,58 @@
+<!doctype html><html><head><meta charset="utf-8"><title>未来的一天</title>
+<style>html,body{margin:0;background:#111;color:#ccc;font:14px sans-serif}canvas{display:block}</style></head>
+<body><canvas id="c" width="1920" height="1080"></canvas>
+<script src="common.js"></script>
+<script src="s01_wakeup.js"></script>
+<script src="s02_breakfast.js"></script>
+<script src="s03_depart.js"></script>
+<script src="s04_work.js"></script>
+<script src="s05_health.js"></script>
+<script src="s06_lunch.js"></script>
+<script src="s07_valley.js"></script>
+<script src="s08_learn.js"></script>
+<script src="s09_life.js"></script>
+<script src="s10_dinner.js"></script>
+<script src="s11_review.js"></script>
+<script src="s12_sleep.js"></script>
+<script>
+/* 时间轴：场景首尾交叉淡化 XF 秒 */
+const XF = 1.0, main = document.getElementById('c'), mainCtx = main.getContext('2d');
+const off = document.createElement('canvas'); off.width = W; off.height = H; const offCtx = off.getContext('2d');
+let acc = 0; SCENES.forEach((s, i) => { s.start = acc; acc += s.dur - XF }); const TOTAL = acc + XF;
+function drawScene(i, t, target) {
+  ctx = target; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.setLineDash([]);
+  const S = SCENES[i]; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.save(); S.draw(t); ctx.restore();
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  chapterTag(S.time, S.title, (S.tagFrom ? prog(t, S.tagFrom, S.tagFrom + 1) : 1) * (S.tagTo ? 1 - prog(t, S.tagTo, S.tagTo + 1) : 1));
+  subtitles(S.subs, t);
+}
+function drawFilm(T) {
+  let i = SCENES.length - 1; for (let k = 0; k < SCENES.length; k++) if (T < SCENES[k].start + SCENES[k].dur || k === SCENES.length - 1) { i = k; break }
+  drawScene(i, T - SCENES[i].start, mainCtx);
+  const n = SCENES[i + 1];
+  if (n && T >= n.start) { drawScene(i + 1, T - n.start, offCtx); mainCtx.globalAlpha = ease((T - n.start) / XF); mainCtx.drawImage(off, 0, 0); mainCtx.globalAlpha = 1 }
+}
+function timeline() { return SCENES.map(s => ({ time: s.time, title: s.title, start: s.start, dur: s.dur, subs: s.subs })) }
+window.ready = document.fonts.load(`500 44px ${F}`).then(() => document.fonts.load(`700 44px ${F}`)).then(() => { drawFilm(0); return true });
+
+/* 浏览器预览：双击打开即可播放。空格暂停，←/→ 跳 3 秒，数字键 1-9/0/-/= 跳到对应场景 */
+if (!location.search.includes('render')) {
+  document.body.style.cssText = 'margin:0;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;overflow:hidden';
+  main.style.cssText = 'max-width:100vw;max-height:calc(100vh - 48px);width:auto;height:auto';
+  const bar = document.createElement('div'); bar.style.cssText = 'width:min(100vw,calc((100vh - 48px)*16/9));display:flex;gap:12px;align-items:center;padding:8px 12px;box-sizing:border-box';
+  bar.innerHTML = '<button id="pp" style="width:64px">暂停</button><input id="sk" type="range" min="0" max="' + TOTAL + '" step="0.01" value="0" style="flex:1"><span id="tm"></span>';
+  document.body.appendChild(bar);
+  let t0 = 0, base = performance.now(), playing = true;
+  const now = () => playing ? Math.min(TOTAL, t0 + (performance.now() - base) / 1000) : t0;
+  const seek = v => { t0 = clamp(v, 0, TOTAL); base = performance.now() };
+  pp.onclick = () => { t0 = now(); base = performance.now(); playing = !playing; pp.textContent = playing ? '暂停' : '播放' };
+  sk.oninput = () => seek(+sk.value);
+  const keys = '1234567890-=';
+  addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); pp.onclick() } if (e.code === 'ArrowRight') seek(now() + 3); if (e.code === 'ArrowLeft') seek(now() - 3);
+    const k = keys.indexOf(e.key); if (k >= 0 && SCENES[k]) seek(SCENES[k].start + (k ? XF : 0))
+  });
+  const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+  window.ready.then(function loop() { const t = now(); if (t >= TOTAL && playing) seek(0); drawFilm(t); sk.value = t; tm.textContent = fmt(t) + ' / ' + fmt(TOTAL); requestAnimationFrame(loop) });
+}
+</script></body></html>

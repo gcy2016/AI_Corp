@@ -1,0 +1,4 @@
+src/stills/
+*.mp4
+dub/dub_tmp/
+__pycache__/
