@@ -2,12 +2,14 @@
 """C589/C363 刷写包自助站构建脚本.
 
 以后更新(V1.5...)时:
-  1. 把新版压缩包解压, 记下"软件刷写包_根据车型及硬件件号选择"的根目录路径, 改下面的 SRC_ROOT 和 VER
+  1. 把新版压缩包解压到本目录, 改下面的 VER(手册路径/文件名、页面上的版本号和手册按钮都跟着变);
+     如果新版文件夹或手册的命名规则变了, 再改 GUIDE_DIR / SRC_ROOT / MANUAL_SRC
   2. 在 pkg_data.json 里增删改条目(字段: pt动力类型 / model车型 / part硬件件号 /
      src源文件夹相对路径 / cfg配置字 / wheel轮速协议 / flow流程类型)
      flow 取值: fuel(燃油) / bosch(伯特利) / hybrid_both(伯特利+大陆双流程)
      slug 字段: 纯 ASCII, 用于生成 zip 文件名, 新增条目时手动编一个
   3. 运行: python3 build.py        (只重建页面: python3 build.py html)
+     任何一个源文件夹或手册找不到都会直接报错退出, 不生成任何东西, 按提示修好再跑
   4. 把 dist/ 下的 index.html + packages/ 上传到 COS 存储桶对应位置覆盖即可, 网址不变
 
 页面是"三步选择器": ①选车型 → ②选件号 → ③出现下载按钮,
@@ -23,17 +25,17 @@ import zipfile
 from html import escape
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC_ROOT = os.path.join(HERE, "C589及C363系列制动控制模块售后换件指南 V1.4",
-                        "软件刷写包_根据车型及硬件件号选择")
-DIST = os.path.join(HERE, "dist")
 VER = "V1.4"
+GUIDE_DIR = os.path.join(HERE, "C589及C363系列制动控制模块售后换件指南 %s" % VER)
+SRC_ROOT = os.path.join(GUIDE_DIR, "软件刷写包_根据车型及硬件件号选择")
+DIST = os.path.join(HERE, "dist")
 
 # COS 固定下载基地址(永久不变, 二维码背后就是它; 下载链接必须用绝对地址,
 # 这样页面即使被手机当文件下载下来打开, 下载按钮依然有效)
 COS_BASE = "https://c589-c363-brake-pkg-1497637272.cos-website.ap-chongqing.myqcloud.com/packages/"
 
-MANUAL_SRC = os.path.join(HERE, "C589及C363系列制动控制模块售后换件指南 V1.4", "指导手册V1.4.pdf")
-MANUAL_NAME = "C589_C363_guide_V1.4.pdf"
+MANUAL_SRC = os.path.join(GUIDE_DIR, "指导手册%s.pdf" % VER)
+MANUAL_NAME = "C589_C363_guide_%s.pdf" % VER
 
 FUEL_STEPS_BODY = """1. 诊断仪进入 EPBi 特殊功能 → 车型配置，按下方配置字选择
 2. EPBi 特殊功能 → 轮速配置，按下方轮速协议选择（四代逸动跳过此步）
@@ -201,6 +203,14 @@ def main(html_only=False):
     hyb_ms = flow_models(data, "hybrid_both")
 
     if not html_only:
+        # 先查齐所有源文件夹和手册, 缺任何一个都不动 dist/ 直接退出:
+        # 否则页面上会有一个点了 404 的下载按钮, 上传后只能等售后打电话才发现
+        missing = [d["src"] for d in data if not os.path.isdir(os.path.join(SRC_ROOT, d["src"]))]
+        if not os.path.isfile(MANUAL_SRC):
+            missing.append(MANUAL_SRC)
+        if missing:
+            sys.exit("!! 以下源文件夹/手册找不到, 未生成任何文件:\n   " + "\n   ".join(missing))
+
         pkg_dir = os.path.join(DIST, "packages")
         shutil.rmtree(DIST, ignore_errors=True)
         os.makedirs(pkg_dir)
@@ -210,9 +220,6 @@ def main(html_only=False):
             assert all(ord(c) < 128 for c in zip_name), "slug 必须为纯 ASCII: " + zip_name
             d["zip"] = "packages/" + zip_name
             src = os.path.join(SRC_ROOT, d["src"])
-            if not os.path.isdir(src):
-                print("!! 源文件夹不存在, 跳过: %s" % d["src"])
-                continue
             txt_name = ("刷写后标定步骤_%s_%s.txt" % (d["model"], d["part"])).replace("/", "_").replace(" ", "")
             with zipfile.ZipFile(os.path.join(pkg_dir, zip_name), "w", zipfile.ZIP_DEFLATED) as z:
                 for root, _, files in os.walk(src):
