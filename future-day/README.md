@@ -12,7 +12,8 @@
 | `src/s01_wakeup.js` … `s12_sleep.js` | 12 个场景，一个文件一个时段，文件顶部 `SUBS` 是该场景的字幕/台词（秒为单位，相对场景开头；`who:'AI'` 为 AI 助手，`who:'ME'` 为居住者） |
 | `src/render.py` | 渲染成 MP4、导出截图、生成时间轴和 SRT |
 | `src/timeline.json` / `src/未来的一天.srt` | 全片字幕时间轴（由 render.py 生成） |
-| `dub/dub.py` / `dub/Muse配音方案.md` | 配音脚本和给 Muse 的操作说明 |
+| `dub/dub.py` / `dub/Muse配音方案.md` | 配音脚本和给 Muse 的操作说明（第 0 步写了怎么获取视频） |
+| `未来的一天.mp4` | 渲染好的无声成片（字幕已烧录） |
 
 ## 渲染
     pip install playwright
