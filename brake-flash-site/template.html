@@ -6,6 +6,7 @@
 <title>C589/C363 制动控制模块刷写包自助下载</title>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { scroll-behavior: smooth; }
   body { margin: 0; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f7; color: #222; }
   .wrap { max-width: 640px; margin: 0 auto; padding: 16px 14px 40px; }
   header { background: linear-gradient(135deg, #1f4e78, #2e75b6); color: #fff; border-radius: 12px; padding: 20px 16px; margin-bottom: 14px; }
@@ -17,7 +18,8 @@
   .step-h .n { width: 30px; height: 30px; border-radius: 50%; background: #2e75b6; color: #fff; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .step-h .hint { font-size: 12.5px; color: #999; font-weight: 400; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .opt { display: flex; align-items: center; justify-content: center; text-align: center; border: 1.5px solid #d7dee7; border-radius: 12px; padding: 14px 8px; font-size: 16px; color: #2e75b6; background: #fff; cursor: pointer; min-height: 58px; line-height: 1.4; }
+  .opt { display: flex; align-items: center; justify-content: center; text-align: center; border: 1.5px solid #d7dee7; border-radius: 12px; padding: 14px 8px; font-size: 16px; color: #2e75b6; background: #fff; cursor: pointer; min-height: 58px; line-height: 1.4; text-decoration: none; }
+  .tg { height: 0; scroll-margin-top: 8px; }
   .pgs { display: none; }
   .dlcard { display: none; background: #fff; border-radius: 12px; padding: 16px 14px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
   .part { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
@@ -46,8 +48,5 @@ __SECTIONS__
   <div class="tip">⚠️ 每个刷写包内已含《刷写后标定步骤》txt，解压即看。<br>⚠️ 微信内点击下载没反应？点右上角 <b>···</b> → <b>在浏览器中打开</b>，再点下载。</div>
   <footer>版本 __VER__ · 刷写前请核对车型与硬件件号<br>下载或刷写有问题请联系技术支持</footer>
 </div>
-<script>
-document.querySelectorAll('input[name="pn"]').forEach(function(r){r.addEventListener('change',function(){var c=document.getElementById('dl'+r.id);if(c)c.scrollIntoView({behavior:'smooth',block:'start'});});});
-</script>
 </body>
 </html>

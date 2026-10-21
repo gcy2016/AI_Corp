@@ -13,7 +13,9 @@
   4. 把 dist/ 下的 index.html + packages/ 上传到 COS 存储桶对应位置覆盖即可, 网址不变
 
 页面是"三步选择器": ①选车型 → ②选件号 → ③出现下载按钮,
-用纯 CSS(:checked 选择器)驱动, 零 JS, 当网页打开/当文件下载下来打开都能点.
+用纯 CSS 驱动, 零 JS, 当网页打开/当文件下载下来打开都能点:
+车型用 radio + :checked; 件号是页内锚点链接, 点了靠浏览器自带的锚点跳转滚到下载卡片,
+卡片用 :target 显示(有的手机浏览器不跑脚本, 所以不靠 JS 滚动).
 件号展示时去掉用户内部版本标记 "_SW..." 后缀(售后不需要看).
 """
 import json
@@ -100,7 +102,8 @@ def calib_txt(d, fuel_ms, bosch_ms, hyb_ms):
 
 def render_index(data, fuel_ms, bosch_ms, hyb_ms):
     """三步选择器页面: ①选车型 → ②选件号 → ③下载按钮出现.
-    纯 CSS radio + :checked 驱动, 零 JS, 下载成文件打开也能点."""
+    车型: radio + :checked; 件号: 锚点链接 → 跳到始终占位的 .tg 锚点(高 0),
+    紧跟其后的下载卡片用 :target 显示. 锚点本身一直可见, 跳转不依赖"先显示后滚动"的时序."""
     groups = []  # [(pt, model, [entries])]
     for d in data:
         if groups and groups[-1][1] == d["model"]:
@@ -111,7 +114,7 @@ def render_index(data, fuel_ms, bosch_ms, hyb_ms):
         shown = [show_part(d["part"]) for d in entries]
         assert len(set(shown)) == len(shown), "去SW后缀后件号在该车型下不唯一: %s %s" % (model, shown)
 
-    cx_radios, pn_radios = [], []
+    cx_radios = []
     css_step2, css_sel_m, css_sel_p, css_pg, css_dl = [], [], [], [], []
     s1_labels, pg_divs, dlcards = [], [], []
 
@@ -123,10 +126,9 @@ def render_index(data, fuel_ms, bosch_ms, hyb_ms):
         pgs = []
         for pi, d in enumerate(entries):
             pid = 'pn%d_%d' % (mi, pi)
-            pn_radios.append('<input type="radio" name="pn" id="%s" class="hx">' % pid)
-            pgs.append('<label class="opt" for="%s">%s</label>' % (pid, escape(show_part(d["part"]))))
-            css_sel_p.append('#%s:checked~.s2 label[for="%s"]' % (pid, pid))
-            css_dl.append('#cx%d:checked~#%s:checked~#dlzone #dl%s' % (mi, pid, pid))
+            pgs.append('<a class="opt" href="#t_%s">%s</a>' % (pid, escape(show_part(d["part"]))))
+            css_sel_p.append('body:has(#t_%s:target) a[href="#t_%s"]' % (pid, pid))
+            css_dl.append('#cx%d:checked~#dlzone #t_%s:target+#dl%s' % (mi, pid, pid))
             url = COS_BASE + "C589_%s.zip" % d["slug"]
             meta = []
             if d.get("cfg"):
@@ -134,18 +136,19 @@ def render_index(data, fuel_ms, bosch_ms, hyb_ms):
             if d.get("wheel"):
                 meta.append("轮速协议：" + escape(d["wheel"]))
             dlcards.append(
+                '  <div class="tg" id="t_%s"></div>\n'
                 '  <div class="dlcard" id="dl%s">\n'
                 '    <div class="step-h"><span class="n">3</span>下载刷写包</div>\n'
                 '    <div class="carmodel">车型：%s</div>\n'
                 '    <div class="part">%s</div>\n'
                 '    <div class="meta">%s</div>\n'
                 '    <a class="dl" href="%s">⬇ 下载刷写包</a>\n'
-                '  </div>' % (pid, escape(d["model"]), escape(show_part(d["part"])), "<br>".join(meta), url))
+                '  </div>' % (pid, pid, escape(d["model"]), escape(show_part(d["part"])), "<br>".join(meta), url))
         pg_divs.append('  <div class="grid pgs" id="pg%d">\n%s\n  </div>' % (mi, "\n".join(pgs)))
         css_pg.append('#cx%d:checked~#step2 #pg%d' % (mi, mi))
 
     sections = (
-        "\n".join(cx_radios + pn_radios) + "\n"
+        "\n".join(cx_radios) + "\n"
         '<div class="step s1">\n'
         '  <div class="step-h"><span class="n">1</span>选择车型</div>\n'
         '  <div class="grid">\n' + "\n".join(s1_labels) + '\n  </div>\n</div>\n'
@@ -159,6 +162,7 @@ def render_index(data, fuel_ms, bosch_ms, hyb_ms):
         '#step2{display:none;}\n'
         + ','.join(css_step2) + '{display:block;}\n'
         + ','.join(css_sel_m) + sel + '\n'
+        # 选中件号高亮用 :has(), 老浏览器不认时只是不高亮(单独一条规则, 不连累别的)
         + ','.join(css_sel_p) + sel + '\n'
         + ','.join(css_pg) + '{display:grid;}\n'
         + ','.join(css_dl) + '{display:block;}\n')
@@ -174,15 +178,14 @@ def render_index(data, fuel_ms, bosch_ms, hyb_ms):
     assert "__MANUAL_URL__" not in html
     for ph in ("__SECTIONS__", "__VER__", "__PICKCSS__", "__MANUAL_URL__"):
         assert ph not in html, "模板占位符未替换: " + ph
-    n_script = html.count("<script")
-    assert n_script == 1, "只允许自动滚动那一个小脚本, 当前 %d 个" % n_script
-    assert "scrollIntoView" in html, "自动滚动脚本缺失"
+    assert "<script" not in html, "页面不放脚本(有的手机浏览器不跑), 跳转靠锚点"
     assert len(re.findall(r'<input[^>]*name="cx"', html)) == len(groups), "车型 radio 数量不对"
-    assert len(re.findall(r'<input[^>]*name="pn"', html)) == len(data), "件号 radio 数量不对"
+    assert len(re.findall(r'<a class="opt" href="#t_pn', html)) == len(data), "件号链接数量不对"
+    assert html.count('class="tg"') == len(data), "锚点数量不对"
     assert html.count('class="dlcard"') == len(data), "下载卡片数量不对"
     with open(os.path.join(DIST, "index.html"), "w", encoding="utf-8") as f:
         f.write(html)
-    print("done: index.html (%d bytes, %d models, %d entries, 1 tiny scroll script)"
+    print("done: index.html (%d bytes, %d models, %d entries, no script)"
           % (len(html.encode("utf-8")), len(groups), len(data)))
 
 
