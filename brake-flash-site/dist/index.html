@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C589/C363 制动控制模块刷写包自助下载</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f7; color: #222; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 16px 14px 40px; }
+  header { background: linear-gradient(135deg, #1f4e78, #2e75b6); color: #fff; border-radius: 12px; padding: 20px 16px; margin-bottom: 14px; }
+  header h1 { font-size: 19px; margin: 0 0 6px; }
+  header p { font-size: 13px; margin: 0; opacity: .85; line-height: 1.7; }
+  .hx { display: none; }
+  .step { background: #fff; border-radius: 12px; padding: 16px 14px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .step-h { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 700; margin-bottom: 12px; flex-wrap: wrap; }
+  .step-h .n { width: 30px; height: 30px; border-radius: 50%; background: #2e75b6; color: #fff; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .step-h .hint { font-size: 12.5px; color: #999; font-weight: 400; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .opt { display: flex; align-items: center; justify-content: center; text-align: center; border: 1.5px solid #d7dee7; border-radius: 12px; padding: 14px 8px; font-size: 16px; color: #2e75b6; background: #fff; cursor: pointer; min-height: 58px; line-height: 1.4; }
+  .pgs { display: none; }
+  .dlcard { display: none; background: #fff; border-radius: 12px; padding: 16px 14px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .part { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+  .carmodel { font-size: 15px; color: #1f4e78; font-weight: 600; margin-bottom: 4px; }
+  .meta { font-size: 13.5px; color: #555; line-height: 1.8; margin-bottom: 10px; }
+  .dl { display: block; text-align: center; background: #07c160; color: #fff; font-size: 16px; font-weight: 700; padding: 13px; border-radius: 10px; text-decoration: none; margin-bottom: 8px; }
+  .model { font-size: 16px; font-weight: 700; margin: 20px 4px 10px; color: #1f4e78; }
+  .note { text-align: center; color: #333; font-size: 15px; font-weight: 600; background: #f0f9f2; border: 1px solid #bfe6c9; border-radius: 10px; padding: 12px; margin: 6px 0 14px; }
+  .tip { margin-top: 12px; font-size: 12.5px; color: #888; background: #f6f6f6; border-radius: 8px; padding: 10px; line-height: 1.7; }
+  footer { text-align: center; font-size: 12px; color: #aaa; margin-top: 18px; line-height: 1.8; }
+#step2{display:none;}
+#cx0:checked~#step2,#cx1:checked~#step2,#cx2:checked~#step2,#cx3:checked~#step2,#cx4:checked~#step2,#cx5:checked~#step2,#cx6:checked~#step2{display:block;}
+#cx0:checked~.s1 label[for="cx0"],#cx1:checked~.s1 label[for="cx1"],#cx2:checked~.s1 label[for="cx2"],#cx3:checked~.s1 label[for="cx3"],#cx4:checked~.s1 label[for="cx4"],#cx5:checked~.s1 label[for="cx5"],#cx6:checked~.s1 label[for="cx6"]{border-color:#2e75b6;background:#eaf3fd;color:#1f4e78;font-weight:700;}
+#pn0_0:checked~.s2 label[for="pn0_0"],#pn0_1:checked~.s2 label[for="pn0_1"],#pn1_0:checked~.s2 label[for="pn1_0"],#pn1_1:checked~.s2 label[for="pn1_1"],#pn2_0:checked~.s2 label[for="pn2_0"],#pn2_1:checked~.s2 label[for="pn2_1"],#pn3_0:checked~.s2 label[for="pn3_0"],#pn4_0:checked~.s2 label[for="pn4_0"],#pn4_1:checked~.s2 label[for="pn4_1"],#pn4_2:checked~.s2 label[for="pn4_2"],#pn5_0:checked~.s2 label[for="pn5_0"],#pn6_0:checked~.s2 label[for="pn6_0"]{border-color:#2e75b6;background:#eaf3fd;color:#1f4e78;font-weight:700;}
+#cx0:checked~#step2 #pg0,#cx1:checked~#step2 #pg1,#cx2:checked~#step2 #pg2,#cx3:checked~#step2 #pg3,#cx4:checked~#step2 #pg4,#cx5:checked~#step2 #pg5,#cx6:checked~#step2 #pg6{display:grid;}
+#cx0:checked~#pn0_0:checked~#dlzone #dlpn0_0,#cx0:checked~#pn0_1:checked~#dlzone #dlpn0_1,#cx1:checked~#pn1_0:checked~#dlzone #dlpn1_0,#cx1:checked~#pn1_1:checked~#dlzone #dlpn1_1,#cx2:checked~#pn2_0:checked~#dlzone #dlpn2_0,#cx2:checked~#pn2_1:checked~#dlzone #dlpn2_1,#cx3:checked~#pn3_0:checked~#dlzone #dlpn3_0,#cx4:checked~#pn4_0:checked~#dlzone #dlpn4_0,#cx4:checked~#pn4_1:checked~#dlzone #dlpn4_1,#cx4:checked~#pn4_2:checked~#dlzone #dlpn4_2,#cx5:checked~#pn5_0:checked~#dlzone #dlpn5_0,#cx6:checked~#pn6_0:checked~#dlzone #dlpn6_0{display:block;}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🔧 C589 / C363 制动控制模块</h1>
+    <p>售后换件刷写包自助下载 · 版本 V1.4<br>👇 按 ①②③ 顺序选择</p>
+  </header>
+    <a class="dl" href="https://c589-c363-brake-pkg-1497637272.cos-website.ap-chongqing.myqcloud.com/packages/C589_C363_guide_V1.4.pdf">⬇ 请先下载《指导手册V1.4》</a>
+
+<input type="radio" name="cx" id="cx0" class="hx">
+<input type="radio" name="cx" id="cx1" class="hx">
+<input type="radio" name="cx" id="cx2" class="hx">
+<input type="radio" name="cx" id="cx3" class="hx">
+<input type="radio" name="cx" id="cx4" class="hx">
+<input type="radio" name="cx" id="cx5" class="hx">
+<input type="radio" name="cx" id="cx6" class="hx">
+<input type="radio" name="pn" id="pn0_0" class="hx">
+<input type="radio" name="pn" id="pn0_1" class="hx">
+<input type="radio" name="pn" id="pn1_0" class="hx">
+<input type="radio" name="pn" id="pn1_1" class="hx">
+<input type="radio" name="pn" id="pn2_0" class="hx">
+<input type="radio" name="pn" id="pn2_1" class="hx">
+<input type="radio" name="pn" id="pn3_0" class="hx">
+<input type="radio" name="pn" id="pn4_0" class="hx">
+<input type="radio" name="pn" id="pn4_1" class="hx">
+<input type="radio" name="pn" id="pn4_2" class="hx">
+<input type="radio" name="pn" id="pn5_0" class="hx">
+<input type="radio" name="pn" id="pn6_0" class="hx">
+<div class="step s1">
+  <div class="step-h"><span class="n">1</span>选择车型</div>
+  <div class="grid">
+<label class="opt" for="cx0">逸达</label>
+<label class="opt" for="cx1">三代逸动</label>
+<label class="opt" for="cx2">四代逸动</label>
+<label class="opt" for="cx3">四代逸动HEV</label>
+<label class="opt" for="cx4">A05挡把款</label>
+<label class="opt" for="cx5">A05怀挡款</label>
+<label class="opt" for="cx6">欧尚520</label>
+  </div>
+</div>
+<div class="step s2" id="step2">
+  <div class="step-h"><span class="n">2</span>选择硬件件号 <span class="hint">(硬件标签上的 3550100 / 3505200 开头编号)</span></div>
+  <div class="grid pgs" id="pg0">
+<label class="opt" for="pn0_0">3550100-MK04</label>
+<label class="opt" for="pn0_1">3550100-MK05</label>
+  </div>
+  <div class="grid pgs" id="pg1">
+<label class="opt" for="pn1_0">3550100-MK04</label>
+<label class="opt" for="pn1_1">3550100-MK05</label>
+  </div>
+  <div class="grid pgs" id="pg2">
+<label class="opt" for="pn2_0">3550100-MK04-FU01</label>
+<label class="opt" for="pn2_1">3550100-MK05-FU01</label>
+  </div>
+  <div class="grid pgs" id="pg3">
+<label class="opt" for="pn3_0">3505200-DY51</label>
+  </div>
+  <div class="grid pgs" id="pg4">
+<label class="opt" for="pn4_0">3505200-DY21</label>
+<label class="opt" for="pn4_1">3505200-MK01-DE01</label>
+<label class="opt" for="pn4_2">3505200-MK01-DE01-AA</label>
+  </div>
+  <div class="grid pgs" id="pg5">
+<label class="opt" for="pn5_0">3505200-DY21</label>
+  </div>
+  <div class="grid pgs" id="pg6">
+<label class="opt" for="pn6_0">3505200-DY41（-AA同样适用）</label>
+  </div>
+</div>
+<div id="dlzone">
+  <div class="dlcard" id="dlpn0_0">
+    <div class="step-h"><span class="n">3</span>下载刷写包</div>
+    <div class="carmodel">车型：逸达</div>
+    <div class="part">3550100-MK04</div>
+    <div class="meta">配置字：低配 → 01<br>轮速协议：PWM</div>
+    <a class="dl" href="https://c589-c363-brake-pkg-1497637272.cos-website.ap-chongqing.myqcloud.com/packages/C589_yida_3550100-MK04.zip">⬇ 下载刷写包</a>
+  </div>
+  <div class="dlcard" id="dlpn0_1">
+    <div class="step-h"><span class="n">3</span>下载刷写包</div>
+    <div class="carmodel">车型：逸达</div>
+    <div class="part">3550100-MK05</div>
+    <div class="meta">配置字：次顶配 → 05；顶配 → 07<br>轮速协议：PWM</div>
+    <a class="dl" href="https://c589-c363-brake-pkg-1497637272.cos-website.ap-chongqing.myqcloud.com/packages/C589_yida_3550100-MK05.zip">⬇ 下载刷写包</a>
+  </div>
+  <div class="dlcard" id="dlpn1_0">
+    <div class="step-h"><span class="n">3</span>下载刷写包</div>
+    <div class="carmodel">车型：三代逸动</div>
+    <div class="part">3550100-MK04</div>
+    <div class="meta">配置字：低配 → 01<br>轮速协议：2024款 → PWM；2025款 → AK</div>
+    <a class="dl" href="https://c589-c363-brake-pkg-1497637272.cos-website.ap-chongqing.myqcloud.com/packages/C589_yidong3_3550100-MK04_SWC01.zip">⬇ 下载刷写包</a>
+  </div>
+  <div class="dlcard" id="dlpn1_1">
+    <div class="step-h"><span class="n">3</span>下载刷写包</div>
+    <div class="carmodel">车型：三代逸动</div>
+    <div class="part">3550100-MK05</div>
+    <div class="meta">配置字：次顶配 → 05；顶配 → 07<br>轮速协议：2024款 → PWM；2025款 → AK</div>
+    <a class="dl" href="https://c589-c363-brake-pkg-1497637272.cos-website.ap-chongqing.myqcloud.com/packages/C589_yidong3_3550100-MK05_SWC01.zip">⬇ 下载刷写包</a>
+  </div>
+  <div class="dlcard" id="dlpn2_0">
+    <div class="step-h"><span class="n">3</span>下载刷写包</div>
+    <div class="carmodel">车型：四代逸动</div>
+    <div class="part">3550100-MK04-FU01</div>
+    <div class="meta">配置字：低配 → 01<br>轮速协议：无需轮速配置</div>
+    <a class="dl" href="https://c589-c363-brake-pkg-1497637272.cos-website.ap-chongqing.myqcloud.com/packages/C589_yidong4_3550100-MK04-FU01_SWD10.zip">⬇ 下载刷写包</a>
+  </div>
+  <div class="dlcard" id="dlpn2_1">
+    <div class="step-h"><span class="n">3</span>下载刷写包</div>
+    <div class="carmodel">车型：四代逸动</div>
+    <div class="part">3550100-MK05-FU01</div>
+    <div class="meta">配置字：高配 → 02<br>轮速协议：无需轮速配置</div>
+    <a class="dl" href="https://c589-c363-brake-pkg-1497637272.cos-website.ap-chongqing.myqcloud.com/packages/C589_yidong4_3550100-MK05-FU01_SWD14.zip">⬇ 下载刷写包</a>
+  </div>
+  <div class="dlcard" id="dlpn3_0">
+    <div class="step-h"><span class="n">3</span>下载刷写包</div>
+    <div class="carmodel">车型：四代逸动HEV</div>
+    <div class="part">3505200-DY51</div>
+    <div class="meta">配置字：无智驾 → 01；带智驾 → 04</div>
+    <a class="dl" href="https://c589-c363-brake-pkg-1497637272.cos-website.ap-chongqing.myqcloud.com/packages/C589_yidong4HEV_3505200-DY51.zip">⬇ 下载刷写包</a>
+  </div>
+  <div class="dlcard" id="dlpn4_0">
+    <div class="step-h"><span class="n">3</span>下载刷写包</div>
+    <div class="carmodel">车型：A05挡把款</div>
+    <div class="part">3505200-DY21</div>
+    <div class="meta">配置字：低续航 → 01；高续航无智驾 → 02；高续航带智驾 → 03</div>
+    <a class="dl" href="https://c589-c363-brake-pkg-1497637272.cos-website.ap-chongqing.myqcloud.com/packages/C589_A05-base_3505200-DY21.zip">⬇ 下载刷写包</a>
+  </div>
+  <div class="dlcard" id="dlpn4_1">
+    <div class="step-h"><span class="n">3</span>下载刷写包</div>
+    <div class="carmodel">车型：A05挡把款</div>
+    <div class="part">3505200-MK01-DE01</div>
+    <div class="meta">配置字：低续航 → 01；高续航无智驾 → 02；高续航带智驾 → 03</div>
+    <a class="dl" href="https://c589-c363-brake-pkg-1497637272.cos-website.ap-chongqing.myqcloud.com/packages/C589_A05-base_3505200-MK01-DE01.zip">⬇ 下载刷写包</a>
+  </div>
+  <div class="dlcard" id="dlpn4_2">
+    <div class="step-h"><span class="n">3</span>下载刷写包</div>
+    <div class="carmodel">车型：A05挡把款</div>
+    <div class="part">3505200-MK01-DE01-AA</div>
+    <div class="meta">配置字：低续航 → 01；高续航无智驾 → 02；高续航带智驾 → 03</div>
+    <a class="dl" href="https://c589-c363-brake-pkg-1497637272.cos-website.ap-chongqing.myqcloud.com/packages/C589_A05-base_3505200-MK01-DE01-AA.zip">⬇ 下载刷写包</a>
+  </div>
+  <div class="dlcard" id="dlpn5_0">
+    <div class="step-h"><span class="n">3</span>下载刷写包</div>
+    <div class="carmodel">车型：A05怀挡款</div>
+    <div class="part">3505200-DY21</div>
+    <div class="meta">配置字：低续航 → 01；高续航无智驾 → 02；高续航带智驾 → 03</div>
+    <a class="dl" href="https://c589-c363-brake-pkg-1497637272.cos-website.ap-chongqing.myqcloud.com/packages/C589_A05-PHEV_3505200-DY21-SWD13.zip">⬇ 下载刷写包</a>
+  </div>
+  <div class="dlcard" id="dlpn6_0">
+    <div class="step-h"><span class="n">3</span>下载刷写包</div>
+    <div class="carmodel">车型：欧尚520</div>
+    <div class="part">3505200-DY41（-AA同样适用）</div>
+    <div class="meta">配置字：无需配置字</div>
+    <a class="dl" href="https://c589-c363-brake-pkg-1497637272.cos-website.ap-chongqing.myqcloud.com/packages/C589_oushang520_3505200-DY41.zip">⬇ 下载刷写包</a>
+  </div>
+</div>
+
+  <div class="note">💡 下载后请按照指导手册进行配置标定</div>
+
+  <div class="tip">⚠️ 每个刷写包内已含《刷写后标定步骤》txt，解压即看。<br>⚠️ 微信内点击下载没反应？点右上角 <b>···</b> → <b>在浏览器中打开</b>，再点下载。</div>
+  <footer>版本 V1.4 · 刷写前请核对车型与硬件件号<br>下载或刷写有问题请联系技术支持</footer>
+</div>
+<script>
+document.querySelectorAll('input[name="pn"]').forEach(function(r){r.addEventListener('change',function(){var c=document.getElementById('dl'+r.id);if(c)c.scrollIntoView({behavior:'smooth',block:'start'});});});
+</script>
+</body>
+</html>
