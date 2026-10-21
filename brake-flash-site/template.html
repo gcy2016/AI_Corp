@@ -6,7 +6,6 @@
 <title>C589/C363 制动控制模块刷写包自助下载</title>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html { scroll-behavior: smooth; }
   body { margin: 0; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f7; color: #222; }
   .wrap { max-width: 640px; margin: 0 auto; padding: 16px 14px 40px; }
   header { background: linear-gradient(135deg, #1f4e78, #2e75b6); color: #fff; border-radius: 12px; padding: 20px 16px; margin-bottom: 14px; }
@@ -19,9 +18,16 @@
   .step-h .hint { font-size: 12.5px; color: #999; font-weight: 400; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .opt { display: flex; align-items: center; justify-content: center; text-align: center; border: 1.5px solid #d7dee7; border-radius: 12px; padding: 14px 8px; font-size: 16px; color: #2e75b6; background: #fff; cursor: pointer; min-height: 58px; line-height: 1.4; text-decoration: none; }
-  .tg { height: 0; scroll-margin-top: 8px; }
+  /* 下载区: 占位提示和所有卡片叠在同一格, 高度始终是最高那张卡片, 选件号前后页面高度不变,
+     锚点跳转的位置才固定(有的浏览器先算滚动位置、后显示卡片) */
+  #dlzone { display: grid; margin-bottom: 14px; }
+  #dlzone > * { grid-area: 1 / 1; }
+  .tg { height: 0; align-self: start; scroll-margin-top: 8px; }
+  .ph { display: flex; flex-direction: column; }
+  .ph .tip2 { font-size: 15px; color: #999; text-align: center; margin: auto 0; padding-bottom: 30px; }
   .pgs { display: none; }
-  .dlcard { display: none; background: #fff; border-radius: 12px; padding: 16px 14px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .dlcard, .ph { background: #fff; border-radius: 12px; padding: 16px 14px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .dlcard { visibility: hidden; }
   .part { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
   .carmodel { font-size: 15px; color: #1f4e78; font-weight: 600; margin-bottom: 4px; }
   .meta { font-size: 13.5px; color: #555; line-height: 1.8; margin-bottom: 10px; }

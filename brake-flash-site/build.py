@@ -103,7 +103,8 @@ def calib_txt(d, fuel_ms, bosch_ms, hyb_ms):
 def render_index(data, fuel_ms, bosch_ms, hyb_ms):
     """三步选择器页面: ①选车型 → ②选件号 → ③下载按钮出现.
     车型: radio + :checked; 件号: 锚点链接 → 跳到始终占位的 .tg 锚点(高 0),
-    紧跟其后的下载卡片用 :target 显示. 锚点本身一直可见, 跳转不依赖"先显示后滚动"的时序."""
+    紧跟其后的下载卡片用 :target 显示. 所有卡片和占位提示叠在同一格、用 visibility 切换,
+    页面高度不随选择变化, 跳转位置不依赖"先显示后滚动"的时序."""
     groups = []  # [(pt, model, [entries])]
     for d in data:
         if groups and groups[-1][1] == d["model"]:
@@ -116,7 +117,7 @@ def render_index(data, fuel_ms, bosch_ms, hyb_ms):
 
     cx_radios = []
     css_step2, css_sel_m, css_sel_p, css_pg, css_dl = [], [], [], [], []
-    s1_labels, pg_divs, dlcards = [], [], []
+    s1_labels, pg_divs, dlcards, css_ph = [], [], [], []
 
     for mi, (pt, model, entries) in enumerate(groups):
         cx_radios.append('<input type="radio" name="cx" id="cx%d" class="hx">' % mi)
@@ -129,6 +130,7 @@ def render_index(data, fuel_ms, bosch_ms, hyb_ms):
             pgs.append('<a class="opt" href="#t_%s">%s</a>' % (pid, escape(show_part(d["part"]))))
             css_sel_p.append('body:has(#t_%s:target) a[href="#t_%s"]' % (pid, pid))
             css_dl.append('#cx%d:checked~#dlzone #t_%s:target+#dl%s' % (mi, pid, pid))
+            css_ph.append('#cx%d:checked~#dlzone #t_%s:target~.ph' % (mi, pid))
             url = COS_BASE + "C589_%s.zip" % d["slug"]
             meta = []
             if d.get("cfg"):
@@ -155,7 +157,11 @@ def render_index(data, fuel_ms, bosch_ms, hyb_ms):
         '<div class="step s2" id="step2">\n'
         '  <div class="step-h"><span class="n">2</span>选择硬件件号 <span class="hint">(硬件标签上的 3550100 / 3505200 开头编号)</span></div>\n'
         + "\n".join(pg_divs) + '\n</div>\n'
-        '<div id="dlzone">\n' + "\n".join(dlcards) + '\n</div>')
+        '<div id="dlzone">\n' + "\n".join(dlcards) + '\n'
+        '  <div class="ph">\n'
+        '    <div class="step-h"><span class="n">3</span>下载刷写包</div>\n'
+        '    <div class="tip2">选好车型和硬件件号后，这里出现下载按钮</div>\n'
+        '  </div>\n</div>')
 
     sel = '{border-color:#2e75b6;background:#eaf3fd;color:#1f4e78;font-weight:700;}'
     pickcss = (
@@ -165,7 +171,8 @@ def render_index(data, fuel_ms, bosch_ms, hyb_ms):
         # 选中件号高亮用 :has(), 老浏览器不认时只是不高亮(单独一条规则, 不连累别的)
         + ','.join(css_sel_p) + sel + '\n'
         + ','.join(css_pg) + '{display:grid;}\n'
-        + ','.join(css_dl) + '{display:block;}\n')
+        + ','.join(css_dl) + '{visibility:visible;}\n'
+        + ','.join(css_ph) + '{visibility:hidden;}\n')
 
 
     with open(os.path.join(HERE, "template.html"), encoding="utf-8") as f:

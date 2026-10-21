@@ -6,7 +6,6 @@
 <title>C589/C363 制动控制模块刷写包自助下载</title>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html { scroll-behavior: smooth; }
   body { margin: 0; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f7; color: #222; }
   .wrap { max-width: 640px; margin: 0 auto; padding: 16px 14px 40px; }
   header { background: linear-gradient(135deg, #1f4e78, #2e75b6); color: #fff; border-radius: 12px; padding: 20px 16px; margin-bottom: 14px; }
@@ -19,9 +18,16 @@
   .step-h .hint { font-size: 12.5px; color: #999; font-weight: 400; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .opt { display: flex; align-items: center; justify-content: center; text-align: center; border: 1.5px solid #d7dee7; border-radius: 12px; padding: 14px 8px; font-size: 16px; color: #2e75b6; background: #fff; cursor: pointer; min-height: 58px; line-height: 1.4; text-decoration: none; }
-  .tg { height: 0; scroll-margin-top: 8px; }
+  /* 下载区: 占位提示和所有卡片叠在同一格, 高度始终是最高那张卡片, 选件号前后页面高度不变,
+     锚点跳转的位置才固定(有的浏览器先算滚动位置、后显示卡片) */
+  #dlzone { display: grid; margin-bottom: 14px; }
+  #dlzone > * { grid-area: 1 / 1; }
+  .tg { height: 0; align-self: start; scroll-margin-top: 8px; }
+  .ph { display: flex; flex-direction: column; }
+  .ph .tip2 { font-size: 15px; color: #999; text-align: center; margin: auto 0; padding-bottom: 30px; }
   .pgs { display: none; }
-  .dlcard { display: none; background: #fff; border-radius: 12px; padding: 16px 14px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .dlcard, .ph { background: #fff; border-radius: 12px; padding: 16px 14px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .dlcard { visibility: hidden; }
   .part { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
   .carmodel { font-size: 15px; color: #1f4e78; font-weight: 600; margin-bottom: 4px; }
   .meta { font-size: 13.5px; color: #555; line-height: 1.8; margin-bottom: 10px; }
@@ -35,7 +41,8 @@
 #cx0:checked~.s1 label[for="cx0"],#cx1:checked~.s1 label[for="cx1"],#cx2:checked~.s1 label[for="cx2"],#cx3:checked~.s1 label[for="cx3"],#cx4:checked~.s1 label[for="cx4"],#cx5:checked~.s1 label[for="cx5"],#cx6:checked~.s1 label[for="cx6"]{border-color:#2e75b6;background:#eaf3fd;color:#1f4e78;font-weight:700;}
 body:has(#t_pn0_0:target) a[href="#t_pn0_0"],body:has(#t_pn0_1:target) a[href="#t_pn0_1"],body:has(#t_pn1_0:target) a[href="#t_pn1_0"],body:has(#t_pn1_1:target) a[href="#t_pn1_1"],body:has(#t_pn2_0:target) a[href="#t_pn2_0"],body:has(#t_pn2_1:target) a[href="#t_pn2_1"],body:has(#t_pn3_0:target) a[href="#t_pn3_0"],body:has(#t_pn4_0:target) a[href="#t_pn4_0"],body:has(#t_pn4_1:target) a[href="#t_pn4_1"],body:has(#t_pn4_2:target) a[href="#t_pn4_2"],body:has(#t_pn5_0:target) a[href="#t_pn5_0"],body:has(#t_pn6_0:target) a[href="#t_pn6_0"]{border-color:#2e75b6;background:#eaf3fd;color:#1f4e78;font-weight:700;}
 #cx0:checked~#step2 #pg0,#cx1:checked~#step2 #pg1,#cx2:checked~#step2 #pg2,#cx3:checked~#step2 #pg3,#cx4:checked~#step2 #pg4,#cx5:checked~#step2 #pg5,#cx6:checked~#step2 #pg6{display:grid;}
-#cx0:checked~#dlzone #t_pn0_0:target+#dlpn0_0,#cx0:checked~#dlzone #t_pn0_1:target+#dlpn0_1,#cx1:checked~#dlzone #t_pn1_0:target+#dlpn1_0,#cx1:checked~#dlzone #t_pn1_1:target+#dlpn1_1,#cx2:checked~#dlzone #t_pn2_0:target+#dlpn2_0,#cx2:checked~#dlzone #t_pn2_1:target+#dlpn2_1,#cx3:checked~#dlzone #t_pn3_0:target+#dlpn3_0,#cx4:checked~#dlzone #t_pn4_0:target+#dlpn4_0,#cx4:checked~#dlzone #t_pn4_1:target+#dlpn4_1,#cx4:checked~#dlzone #t_pn4_2:target+#dlpn4_2,#cx5:checked~#dlzone #t_pn5_0:target+#dlpn5_0,#cx6:checked~#dlzone #t_pn6_0:target+#dlpn6_0{display:block;}
+#cx0:checked~#dlzone #t_pn0_0:target+#dlpn0_0,#cx0:checked~#dlzone #t_pn0_1:target+#dlpn0_1,#cx1:checked~#dlzone #t_pn1_0:target+#dlpn1_0,#cx1:checked~#dlzone #t_pn1_1:target+#dlpn1_1,#cx2:checked~#dlzone #t_pn2_0:target+#dlpn2_0,#cx2:checked~#dlzone #t_pn2_1:target+#dlpn2_1,#cx3:checked~#dlzone #t_pn3_0:target+#dlpn3_0,#cx4:checked~#dlzone #t_pn4_0:target+#dlpn4_0,#cx4:checked~#dlzone #t_pn4_1:target+#dlpn4_1,#cx4:checked~#dlzone #t_pn4_2:target+#dlpn4_2,#cx5:checked~#dlzone #t_pn5_0:target+#dlpn5_0,#cx6:checked~#dlzone #t_pn6_0:target+#dlpn6_0{visibility:visible;}
+#cx0:checked~#dlzone #t_pn0_0:target~.ph,#cx0:checked~#dlzone #t_pn0_1:target~.ph,#cx1:checked~#dlzone #t_pn1_0:target~.ph,#cx1:checked~#dlzone #t_pn1_1:target~.ph,#cx2:checked~#dlzone #t_pn2_0:target~.ph,#cx2:checked~#dlzone #t_pn2_1:target~.ph,#cx3:checked~#dlzone #t_pn3_0:target~.ph,#cx4:checked~#dlzone #t_pn4_0:target~.ph,#cx4:checked~#dlzone #t_pn4_1:target~.ph,#cx4:checked~#dlzone #t_pn4_2:target~.ph,#cx5:checked~#dlzone #t_pn5_0:target~.ph,#cx6:checked~#dlzone #t_pn6_0:target~.ph{visibility:hidden;}
 
 </style>
 </head>
@@ -191,6 +198,10 @@ body:has(#t_pn0_0:target) a[href="#t_pn0_0"],body:has(#t_pn0_1:target) a[href="#
     <div class="part">3505200-DY41（-AA同样适用）</div>
     <div class="meta">配置字：无需配置字</div>
     <a class="dl" href="https://c589-c363-brake-pkg-1497637272.cos-website.ap-chongqing.myqcloud.com/packages/C589_oushang520_3505200-DY41.zip">⬇ 下载刷写包</a>
+  </div>
+  <div class="ph">
+    <div class="step-h"><span class="n">3</span>下载刷写包</div>
+    <div class="tip2">选好车型和硬件件号后，这里出现下载按钮</div>
   </div>
 </div>
 
