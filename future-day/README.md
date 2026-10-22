@@ -20,6 +20,7 @@
     python -m playwright install chromium
     cd src
     python render.py video 未来的一天.mp4     # 整片，约 15 分钟，需要 ffmpeg
+    python render.py clip 6                    # 只渲染第 6 个场景 → 场景06.mp4，改完单个场景先看这个
     python render.py scene 7 3 10 20           # 第 7 个场景第 3/10/20 秒截图 → stills/
     python render.py timeline                  # 改了台词后重新生成 timeline.json 和 SRT
 
