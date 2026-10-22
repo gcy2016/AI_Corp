@@ -188,7 +188,8 @@ function pod(x, y, s, o = {}) {
   ctx.fillStyle = o.col || '#f2f4f8'; ctx.beginPath(); ctx.moveTo(-190, -30); ctx.quadraticCurveTo(-186, -120, -90, -138); ctx.lineTo(80, -138); ctx.quadraticCurveTo(180, -128, 192, -40); ctx.lineTo(190, -22); ctx.lineTo(-190, -22); ctx.closePath(); ctx.fill();
   ctx.fillStyle = '#1f2a3f'; ctx.beginPath(); ctx.moveTo(-160, -60); ctx.quadraticCurveTo(-150, -118, -86, -124); ctx.lineTo(80, -124); ctx.quadraticCurveTo(160, -116, 170, -60); ctx.closePath(); ctx.fill();
   const g = ctx.createLinearGradient(-160, -124, 100, -60); g.addColorStop(0, 'rgba(160,210,255,.35)'); g.addColorStop(1, 'rgba(160,210,255,0)'); ctx.fillStyle = g; ctx.fill();
-  if (o.door) { ctx.fillStyle = o.col || '#f2f4f8'; const dx = o.door * 120; ctx.save(); ctx.beginPath(); ctx.rect(-190, -140, 380, 140); ctx.clip(); fillRR(-60 + dx, -126, 116, 104, 10, mix(o.col || '#f2f4f8', '#000000', .06)); ctx.restore() }
+  if (o.door) { alpha(o.door, () => fillRR(-60, -126, 116, 104, 10, '#26303f')); if (o.cabin) o.cabin(); // 车门打开后露出车厢，o.cabin 画正在上车的人
+    ctx.fillStyle = o.col || '#f2f4f8'; const dx = o.door * 120; ctx.save(); ctx.beginPath(); ctx.rect(-190, -140, 380, 140); ctx.clip(); fillRR(-60 + dx, -126, 116, 104, 10, mix(o.col || '#f2f4f8', '#000000', .06)); ctx.restore() }
   else line(-4, -124, -4, -24, 'rgba(0,0,0,.1)', 3);
   ctx.fillStyle = o.light || '#7cd4ff'; fillRR(150, -52, 40, 8, 4, o.light || '#7cd4ff'); fillRR(-190, -52, 26, 8, 4, '#ff7a7a');
   for (const wx of [-110, 110]) { circle(wx, -12, 34, '#2a2f3d'); circle(wx, -12, 16, '#9aa7ba'); }

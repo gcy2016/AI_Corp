@@ -7,7 +7,7 @@
 依赖：Python 3.9+、ffmpeg（在 PATH 里）、pip install edge-tts（需要联网）
 台词和时间全部来自 timeline.json，和视频里的字幕完全一致。
 """
-import asyncio, subprocess, json, pathlib, sys
+import asyncio, subprocess, json, pathlib, sys, hashlib
 
 HERE = pathlib.Path(__file__).parent
 VIDEO = HERE / "未来的一天.mp4"
@@ -45,7 +45,8 @@ async def synth(lines):
     clips, warns = [], []
     for i, (a, b, who, text, scene) in enumerate(lines, 1):
         v = VOICES[who]
-        raw = tmp / f"{i:03d}_raw.mp3"
+        key = hashlib.md5(f"{v}{text}".encode("utf-8")).hexdigest()[:8]  # 台词或音色变了就重新合成
+        raw = tmp / f"{i:03d}_{key}_raw.mp3"
         if not raw.exists():
             await edge_tts.Communicate(text, v["voice"], rate=v["rate"], pitch=v["pitch"]).save(str(raw))
         d, slot = duration(raw), (b - a) + 0.3

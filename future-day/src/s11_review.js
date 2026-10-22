@@ -8,7 +8,7 @@
     { a: 28.4, b: 35.2, text: '随后，居住者打开恒星模拟继续学习，也可以切换到音乐、绘画或游戏。' },
   ];
   const DUR = 38;
-  const PH = [['08:02', '出发', 7], ['12:10', '餐厅', 4], ['14:08', '山谷入口', 1], ['14:31', '高山杜鹃', 9], ['14:42', '湖边', 3], ['14:44', '湖边', 2], ['15:05', '岩层', 5], ['16:20', '返程', 6]];
+  const PH = [['12:10', '餐厅', 4], ['13:02', '出发', 7], ['14:08', '山谷入口', 1], ['14:31', '高山杜鹃', 9], ['14:42', '湖边', 3], ['14:44', '湖边', 2], ['15:05', '岩层', 5], ['16:20', '返程', 6]];
   function album(t) {
     txt('今天 · 旅行相册', X + 50, Y + 76, 38, '#fff', 700); txt('AI 已整理 · 8 张照片 · 2 段视频', X + 380, Y + 74, 22, '#8fa9c8');
     const del = 5, dp = ease(prog(t, 10, 10.8)), sw = ease(prog(t, 8.2, 9.2));
@@ -28,7 +28,7 @@
     if (t > 7 && t < 13.4) hand(hx, hy, bump(t, 12.6, 13) + bump(t, 7.9, 8.2));
   }
   let X = 160, Y = 128;
-  const ROUTE = [[260, 640, '家 08:00', 7], [520, 520, '城市道路', -1], [760, 560, '餐厅 12:10', 4], [1040, 380, '山谷入口 14:08', 1], [1240, 300, '湖边 14:42', 3], [1380, 420, '岩层 15:05', 5], [1100, 700, '返程 16:20', 6], [440, 700, '回家 18:00', -1]];
+  const ROUTE = [[260, 640, '家 13:00', 7], [520, 520, '城市道路', -1], [1040, 380, '山谷入口 14:08', 1], [1240, 300, '湖边 14:42', 3], [1380, 420, '岩层 15:05', 5], [1100, 700, '返程 16:20', 6], [440, 700, '回家 18:00', -1]];
   function route(t) {
     txt('今天的路线', X + 50, Y + 76, 38, '#fff', 700); txt('总里程 86 km · 步行 7.4 km', X + 290, Y + 74, 22, '#8fa9c8');
     ctx.save(); rr(X + 50, Y + 110, 1500, 640, 22); ctx.clip(); ctx.fillStyle = '#10243a'; ctx.fillRect(X + 50, Y + 110, 1500, 640);
@@ -40,7 +40,7 @@
     let L = 0; const seg = []; for (let i = 1; i < P.length; i++) { seg.push(Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1])); L += seg[i - 1] }
     ctx.strokeStyle = '#ffd66b'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(...P[0]); let d = p * L, reached = 0;
     for (let i = 1; i < P.length; i++) { if (d >= seg[i - 1]) { ctx.lineTo(...P[i]); d -= seg[i - 1]; reached = i } else { const k = d / seg[i - 1]; ctx.lineTo(lerp(P[i - 1][0], P[i][0], k), lerp(P[i - 1][1], P[i][1], k)); break } } ctx.stroke();
-    ROUTE.forEach(([x, y, lab, s], i) => { if (i > reached) return; circle(X + x, Y + y, 12, i === 0 || i === 7 ? '#7cc4ff' : '#ffd66b'); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); txt(lab, X + x, Y + y + 40, 22, '#fff', 600, 'center');
+    ROUTE.forEach(([x, y, lab, s], i) => { if (i > reached) return; circle(X + x, Y + y, 12, i === 0 || i === ROUTE.length - 1 ? '#7cc4ff' : '#ffd66b'); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); txt(lab, X + x, Y + y + 40, 22, '#fff', 600, 'center');
       if (s >= 0 && t > 21.6) { const k = easeOut(prog(t, 21.8 + i * .4, 22.4 + i * .4)); alpha(k, () => { const ox = X + x - 70, oy = Y + y - 140 - (1 - k) * 20; line(X + x, Y + y - 14, X + x, oy + 96, 'rgba(255,255,255,.6)', 2); photo(ox, oy, 140, 90, s, 0, true) }) } });
   }
   function star(t) {

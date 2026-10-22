@@ -91,8 +91,9 @@
     ctx.fillStyle = '#7a5b45'; fillRR(420, 640, 700, 22, 8, '#7a5b45'); fillRR(460, 662, 18, 160, 4, '#6a4e3b'); fillRR(1062, 662, 18, 160, 4, '#6a4e3b');
     fillRR(1260, 520, 640, 30, 4, '#8b9aa8'); ctx.fillStyle = '#d8d0c6'; ctx.fillRect(1270, 550, 620, 270);
     const n = 4 - Math.floor(prog(t, 35, 38.5) * 4.99); for (let i = 0; i < n; i++) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(520 + i * 160, 636, 50, 8, 0, 0, 7); ctx.fill() }
-    personSide(600, 830, 1.15, { pose: 'stand', c: FR[0], armTo: [[20, -40], [50, -30]] }); fillRR(640, 676, 70, 10, 4, '#fff');
-    const wx = track(t, [[34, 900, 0], [37, 1350, 0], [40, 900, 0]])[0]; personSide(wx, 830, 1.15, { pose: 'walk', ph: t * 6, c: FR[1], dir: t < 37 ? 1 : -1, armTo: [[24, -40], [52, -36]] }); fillRR(wx + 40, 670, 60, 20, 4, '#fff');
+    // armTo 是人物局部坐标（肩膀约在 (2,-134)），手端着盘子停在胸前
+    personSide(600, 830, 1.15, { pose: 'stand', c: FR[0], armTo: [[22, -104], [52, -110]] }); fillRR(600 + 52 * 1.15 - 38, 830 - 110 * 1.15 - 18, 76, 10, 4, '#fff');
+    const wx = track(t, [[34, 900, 0], [37, 1350, 0], [40, 900, 0]])[0], wd = t < 37 ? 1 : -1; personSide(wx, 830, 1.15, { pose: 'walk', ph: t * 6, c: FR[1], dir: wd, armTo: [[22, -104], [52, -110]] }); fillRR(wx + wd * 52 * 1.15 - 32, 830 - 110 * 1.15 - 26, 64, 18, 4, '#fff');
     personSide(1200, 830, 1.15, { pose: 'stand', dir: -1, arm: -1.5 + Math.sin(t * 5) * .3 }); personSide(300, 830, 1.15, { pose: 'stand', c: FR[2], arm: .3 }); personSide(1500, 830, 1.15, { pose: 'stand', dir: -1, c: FR[3], arm: .2 });
     [[300, '哈哈'], [1500, '下次一起去山谷']].forEach(([x, s], i) => { const a = bump(t, 36 + i * 1.6, 38.4 + i * 1.6); alpha(a, () => { const w = tw(s, 24, 600) + 40; fillRR(x - w / 2, 560, w, 50, 25, 'rgba(255,255,255,.92)'); txt(s, x, 594, 24, '#4a3f55', 600, 'center') }) });
   }

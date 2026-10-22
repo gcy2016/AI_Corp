@@ -95,8 +95,12 @@
     personFront(760, 700, 1.6, { bob: Math.sin(t * 1.4) * 2 });
     // eating arm
     const e = bump((t - 14.5) % 3.2, 0.6, 2.6);
-    const hx = lerp(860, 790, e), hy = lerp(790, 570, e);
-    limb(840, 600, 900, 700, hx, hy, ME.shirt, 26); circle(hx, hy, 13, ME.skin); line(hx, hy, hx - 40, hy - 10 + e * 20, '#c0c6cf', 5);
+    // 手臂从肩膀长出（两段 IK，肘部向外下方弯）
+    const hx = lerp(850, 796, e), hy = lerp(770, 600, e), sx = 812, sy = 664 + Math.sin(t * 1.4) * 2, l1 = 80, l2 = 125;
+    const dx = hx - sx, dy = hy - sy, d = clamp(Math.hypot(dx, dy), l2 - l1 + 1, l1 + l2 - 1), a0 = Math.atan2(dy, dx), da = Math.acos((l1 * l1 + d * d - l2 * l2) / (2 * l1 * d));
+    const ang = Math.cos(a0 + da) > Math.cos(a0 - da) ? a0 + da : a0 - da; // 取肘部朝外（右侧）的解
+    const elx = sx + Math.cos(ang) * l1, ely = sy + Math.sin(ang) * l1;
+    limb(sx, sy, elx, ely, hx, hy, ME.shirt, 26); circle(hx, hy, 14, ME.skin); line(hx, hy, hx - 40, hy - 10 + e * 20, '#c0c6cf', 5);
     // table
     ctx.fillStyle = '#c79f7b'; ctx.fillRect(0, 760, W, 320); ctx.fillStyle = '#d7b08c'; ctx.fillRect(0, 760, W, 26);
     // table screen strip

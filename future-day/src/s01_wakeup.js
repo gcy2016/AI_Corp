@@ -6,7 +6,7 @@ const SUBS=[
  {a:17.0,b:22.4,text:'床边的屏幕亮起，显示今天的天气、日程和个人事务。'},
  {a:23.0,b:27.0,who:"AI",text:'早上好。今天晴，气温二十二度。'},
  {a:27.3,b:30.4,who:"AI",text:'上午没有固定安排。'},
- {a:30.8,b:37.2,who:"AI",text:'附近山谷的天气适合户外活动，预计九点出发，车程四十分钟。'},
+ {a:30.8,b:37.2,who:"AI",text:'附近山谷的天气适合户外活动，预计下午一点出发，车程四十分钟。'},
  {a:38.0,b:43.2,text:'居住者可以查看日程，也可以临时更改计划。'},
 ];
 
@@ -221,7 +221,7 @@ function drawUIShot(t){
   // schedule
   x=SX+48+cw+24;al=easeOut(prog(t,cards[1],cards[1]+.6));card(x,cy,cw,ch,al*hA,(t>27.3&&t<30.6)||(t>39.4&&t<41));ctx.globalAlpha=al*hA;
   txt('今日日程',x+32,cy+52,26,'#8fa9c8',500);
-  const rows=[[confirmed?'09:00':'上午',confirmed?'出发 · 山谷徒步':'无固定安排',confirmed],['下午','空闲',0],['19:00','朋友来家晚餐',0]];
+  const rows=[['上午','无固定安排',0],[confirmed?'13:00':'下午',confirmed?'出发 · 山谷徒步':'空闲',confirmed],['19:00','朋友来家晚餐',0]];
   rows.forEach((r,i)=>{const yy=cy+106+i*46;if(r[2]){rr(x+20,yy-32,cw-40,44,12);ctx.fillStyle=`rgba(47,191,113,${.25*prog(t,39.35,39.8)})`;ctx.fill()}
     txt(r[0],x+32,yy,26,r[2]?'#7ff0b0':'#9fb6d4',600);txt(r[1],x+124,yy,28,'#ffffff',400)});
   // personal
@@ -245,7 +245,7 @@ function drawUIShot(t){
     const tx=bx+450;rr(tx,by+30,72,34,17);ctx.fillStyle='#2fbf71';ctx.fill();txt('推荐',tx+36,by+56,22,'#fff',600,'center');
     txt('山谷徒步',tx+90,by+60,40,'#ffffff',700);
     txt('附近山谷天气适合户外活动',tx,by+112,28,'#d6e4f5',400);
-    txt('09:00 出发  ·  车程 40 分钟',tx,by+156,26,'#9fd0ff',500);txt('晴 18–24 ℃  ·  湖畔步道 6.2 km',tx,by+196,24,'#8fa9c8',400);
+    txt('13:00 出发  ·  车程 40 分钟',tx,by+156,26,'#9fd0ff',500);txt('晴 18–24 ℃  ·  湖畔步道 6.2 km',tx,by+196,24,'#8fa9c8',400);
     // buttons
     const b1x=bx+bw-240,b2x=bx+bw-240,byy=by+40,byy2=by+124;
     const p1=Math.sin(Math.PI*prog(t,39.05,39.45));
@@ -258,7 +258,7 @@ function drawUIShot(t){
     const pA=easeOut(prog(t,41.5,41.9))*(1-prog(t,43.3,43.7));
     if(pA>0){ctx.globalAlpha=pA*hA;const px=b2x-250,py=by-108-(1-pA)*10;rr(px,py,450,96,20);ctx.fillStyle='#f4f8ff';ctx.fill();
       txt('出发时间',px+24,py+36,22,'#5b6b82',500);
-      ['08:30','09:00','10:00','改天'].forEach((s,i)=>{const cx2=px+24+i*104;rr(cx2,py+48,92,36,18);ctx.fillStyle=s==='09:00'?'#3d8bff':'#e1e9f5';ctx.fill();txt(s,cx2+46,py+74,22,s==='09:00'?'#fff':'#33445c',600,'center')})}
+      ['12:30','13:00','14:00','改天'].forEach((s,i)=>{const cx2=px+24+i*104;rr(cx2,py+48,92,36,18);ctx.fillStyle=s==='13:00'?'#3d8bff':'#e1e9f5';ctx.fill();txt(s,cx2+46,py+74,22,s==='13:00'?'#fff':'#33445c',600,'center')})}
   }
   ctx.globalAlpha=1;
   // glass sheen

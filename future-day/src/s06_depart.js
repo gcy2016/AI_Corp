@@ -1,4 +1,4 @@
-/* 08:00 出发：自动驾驶车辆到达；交通系统协同；车内与 AI 规划日本一个月 */
+/* 13:00 出发：自动驾驶车辆到达；交通系统协同；车内与 AI 规划日本一个月 */
 (() => {
   const SUBS = [
     { a: 1.0, b: 6.4, text: '居住者决定前往山谷，楼下的自动驾驶车辆准时抵达。' },
@@ -27,17 +27,24 @@
     fillRR(0, 826, W, 8, 2, '#b8b2a8');
     // lamp
     line(820, 770, 820, 520, '#59606d', 8); line(820, 520, 870, 510, '#59606d', 6); fillRR(860, 505, 40, 10, 5, '#ffe9b5');
-    // car
+    // car：车放大到 1.4 倍、人缩到 0.95 倍，人比车矮
+    const S = 1.4, CY = 905, PS = .95;
     const arrive = easeOut(prog(t, .8, 4.6)), leave = Math.pow(prog(t, 9.0, 11), 2);
-    const cx = lerp(2300, 1200, arrive) - leave * 1600, door = ease(prog(t, 5.0, 5.9)) * (1 - ease(prog(t, 8.2, 8.9)));
-    // person
-    const pw = track(t, [[0, 420, 0], [.6, 420, 0], [3.2, 900, 0], [5.6, 900, 0], [7.4, 1150, 0]])[0];
-    const walking = (t > .6 && t < 3.2) || (t > 5.6 && t < 7.4);
-    const pin = 1 - prog(t, 7.4, 8.0);
-    pod(cx, 905, 1.0, { door, col: '#f4f6fa' });
-    if (pin > 0) alpha(pin, () => personSide(pw, 800, 1.15, { pose: walking ? 'walk' : 'stand', ph: t * 7 }));
+    const cx = lerp(2400, 1250, arrive) - leave * 1800, door = ease(prog(t, 5.0, 5.9)) * (1 - ease(prog(t, 8.2, 8.9)));
+    // person：人行道走到路边 → 下到车旁 → 走到车门前 → 迈进车厢
+    const DX = 1250 - 3, RY = 940;
+    const [pw, py] = track(t, [[0, 370, 800], [.6, 370, 800], [3.2, 880, 800], [3.4, 880, 800], [4.6, 920, RY], [5.6, 920, RY], [7.0, DX, RY]]);
+    const walking = (t > .6 && t < 3.2) || (t > 3.4 && t < 4.6) || (t > 5.6 && t < 7.0);
+    const board = prog(t, 7.0, 7.8), fade = 1 - prog(t, 7.5, 8.2);
+    const pose = () => ({ pose: walking ? 'walk' : 'stand', ph: t * 7 });
+    pod(cx, CY, S, {
+      door, col: '#f4f6fa',
+      cabin: () => { if (t >= 7.0 && fade > 0) alpha(fade, () => personSide((pw - cx) / S, (py - 41 * ease(board) - CY) / S, PS / S, { pose: board > 0 && board < 1 ? 'walk' : 'stand', ph: t * 7, arm: -.6 })) },
+      inside: () => { if (t > 8.2) alpha(.85 * prog(t, 8.2, 8.8), () => { circle(-12, -84, 17, '#c99b7c'); ctx.fillStyle = ME.hair; ctx.beginPath(); ctx.arc(-14, -86, 18, Math.PI * .72, Math.PI * 2.08); ctx.fill() }) }
+    });
+    if (t < 7.0) personSide(pw, py, PS, pose());
     chip(cx - 170, 640, '目的地', '山谷 · 预计 40 分钟', '#8ff0c4', easeOut(prog(t, 5.2, 5.8)) * (1 - prog(t, 8.6, 9)));
-    alpha(easeOut(prog(t, 1.4, 2)) * (1 - prog(t, 4.6, 5)), () => chip(1350, 600, '车辆', '准时到达 08:00', '#7cc4ff', 1));
+    alpha(easeOut(prog(t, 1.4, 2)) * (1 - prog(t, 4.6, 5)), () => chip(1350, 600, '车辆', '准时到达 13:00', '#7cc4ff', 1));
   }
   // 城市路网俯视
   const GX = [180, 420, 660, 900, 1140, 1380, 1620, 1820], GY = [140, 330, 520, 710, 900];
@@ -67,7 +74,7 @@
     // HUD
     glass(60, 130, 470, 300, 22, 'rgba(10,20,36,.9)', 'rgba(18,40,66,.9)');
     txt('交通协同中', 96, 188, 32, '#fff', 700); aiOrb(470, 174, 22, t, false);
-    [['周边车辆', Math.round(lerp(96, 128, prog(t, 10, 13))) + ' 辆'], ['信号灯优先', Math.min(6, Math.floor(prog(t, 10.5, 16) * 7)) + ' 处'], ['预计到达', t > 15 ? '08:36' : '08:40']].forEach(([k, v], i) => { txt(k, 96, 250 + i * 56, 26, '#8fa9c8', 500); txt(v, 490, 250 + i * 56, 28, i === 2 && t > 15 ? '#8ff0c4' : '#fff', 600, 'right') });
+    [['周边车辆', Math.round(lerp(96, 128, prog(t, 10, 13))) + ' 辆'], ['信号灯优先', Math.min(6, Math.floor(prog(t, 10.5, 16) * 7)) + ' 处'], ['预计到达', t > 15 ? '13:36' : '13:40']].forEach(([k, v], i) => { txt(k, 96, 250 + i * 56, 26, '#8fa9c8', 500); txt(v, 490, 250 + i * 56, 28, i === 2 && t > 15 ? '#8ff0c4' : '#fff', 600, 'right') });
     chip(1180, 760, '路线', '已动态调整 · 节省 4 分钟', '#8ff0c4', easeOut(prog(t, 15.2, 15.8)));
   }
   function pin(x, y, label, col) { circle(x, y, 16, col); ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.stroke(); txt(label, x, y - 28, 24, '#fff', 600, 'center') }
@@ -88,7 +95,8 @@
     ctx.strokeStyle = mix('#d7dde5', '#2a2640', dusk * .7); ctx.lineWidth = 16; rr(90, 150, 1000, 470, 60); ctx.stroke();
     // floor + seat
     ctx.fillStyle = mix('#d5dbe3', '#2c2a3e', dusk * .7); ctx.fillRect(0, 860, W, 220);
-    fillRR(380, 520, 120, 330, 40, mix('#c9b79f', '#6a5a52', dusk * .5)); fillRR(380, 760, 380, 100, 30, mix('#d8c6ae', '#6a5a52', dusk * .5));
+    // 座椅按人的身形：靠背到肩颈、坐垫到膝盖
+    fillRR(486, 842, 70, 18, 6, mix('#aab3bf', '#2c2a3e', dusk * .6)); fillRR(434, 596, 72, 214, 32, mix('#c9b79f', '#6a5a52', dusk * .5)); fillRR(434, 772, 166, 72, 26, mix('#d8c6ae', '#6a5a52', dusk * .5));
     personSide(520, 760, 1.25, { pose: 'sit', lean: 6, armTo: o.armTo, arm: .9 });
     // screen
     glass(1140, 200, 680, 520, 30); ctx.strokeStyle = '#1a1e29'; ctx.lineWidth = 14; rr(1140, 200, 680, 520, 30); ctx.stroke();
@@ -113,7 +121,7 @@
     }
   }
   SCENES.push({
-    time: '08:00', title: '出发', dur: DUR, subs: SUBS, draw(t) {
+    time: '13:00', title: '出发', dur: DUR, subs: SUBS, draw(t) {
       if (t < 10.1) camera(1.04 - .04 * prog(t, 0, 10), 960, 540, () => street(t));
       if (t >= 9.5 && t < 20.6) alpha(t < 10.1 ? ease(prog(t, 9.5, 10.1)) : 1, () => camera(1 + .03 * prog(t, 9.5, 20.5), 960, 540, () => map(t)));
       if (t >= 20.0) alpha(ease(prog(t, 20.0, 20.6)), () => {
