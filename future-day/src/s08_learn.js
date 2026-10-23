@@ -40,12 +40,12 @@
   window.starSim = starSim;
   function simS(t) { // timeline value
     if (t < 7) return 0; if (t < 19.4) return ease(prog(t, 7, 19.2));
-    if (t < 21.2) return 1; if (t < 23) return lerp(1, .55, ease(prog(t, 21.2, 23))); if (t < 24.6) return lerp(.55, .9, ease(prog(t, 23.2, 24.6))); return lerp(.9, 1, ease(prog(t, 24.6, 26)))
+    if (t < 21.2) return 1; if (t < 23) return lerp(1, .55, ease(prog(t, 21.2, 23))); return lerp(.55, 1, ease(prog(t, 23.2, 24.0))) // 手松开（24.2）前滑块就停住
   }
   function space(t) {
     ctx.fillStyle = vgrad(0, H, ['#05060f', '#0d1030']); ctx.fillRect(0, 0, W, H);
     BG.forEach(b => circle(b.x, b.y, b.r, `rgba(255,255,255,${.3 + .5 * Math.abs(Math.sin(t * .7 + b.p))})`));
-    const s = simS(t), rot = t * .12 + ease(prog(t, 24.4, 26.2)) * 1.4, cut = prog(t, 25.6, 26) > .5 && t < 27;
+    const s = simS(t), rot = t * .12 + ease(prog(t, 24.6, 26)) * 1.4, cut = prog(t, 25.6, 26) > .5 && t < 27;
     starSim(760, 470, 380, s, rot, t, cut);
     // stage labels + timeline
     const st = ['分子云', '引力坍缩', '原恒星', '主序星'], X0 = 200, X1 = 1320, Y = 870;
@@ -77,7 +77,15 @@
         txt('已掌握：坍缩、原恒星、点燃', 1510, 600, 20, '#cfd3ef'); txt('下一节：恒星的演化', 1510, 640, 22, '#ffcf9a', 600) })
     }
     // interactions
-    if (t > 20.6 && t < 26.6) { const [hx, hy] = track(t, [[20.6, 1900, 1250], [21.2, kx, Y + 8], [26, kx, Y + 8], [26.6, 2000, 1300]]); const [h2x, h2y] = [hx, hy]; hand(t < 24.2 ? h2x : lerp(kx, 1060, ease(prog(t, 24.2, 24.5))) + (t > 24.5 && t < 26 ? -ease(prog(t, 24.5, 26)) * 260 : 0), t < 24.2 ? h2y : lerp(Y + 8, 620, ease(prog(t, 24.2, 24.5))), 0, ME.shirt) }
+    // 手：先按住滑块拖动时间轴（指尖始终在滑块上），再移到模型上往左拖着旋转，最后顺着原位置移出画面
+    if (t > 20.6 && t < 26.8) {
+      let hx, hy;
+      if (t < 21.2) [hx, hy] = [lerp(1900, kx, ease(prog(t, 20.6, 21.2))), lerp(1250, Y + 8, ease(prog(t, 20.6, 21.2)))];
+      else if (t < 24.2) [hx, hy] = [kx, Y + 8];
+      else if (t < 26) { const a = ease(prog(t, 24.2, 24.6)); [hx, hy] = [lerp(kx, 1060, a) - ease(prog(t, 24.6, 26)) * 260, lerp(Y + 8, 620, a)] }
+      else [hx, hy] = [lerp(800, 2000, ease(prog(t, 26, 26.8))), lerp(620, 1300, ease(prog(t, 26, 26.8)))];
+      hand(hx, hy, t > 24.6 && t < 26 ? .4 : 0, ME.shirt)
+    }
     if (t > 27 && t < 29.8) { const k = easeOut(prog(t, 27, 27.4)); alpha(k, () => { aiOrb(1670, 560, 40, t, true); txt('正在聆听…', 1670, 640, 22, '#cfe3ff', 500, 'center') }) }
   }
   function car(t) {
