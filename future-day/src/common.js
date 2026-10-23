@@ -156,9 +156,27 @@ function personFront(x, y, s, o = {}) {
   ctx.fillStyle = C.hair; ctx.beginPath();
   if (o.long) { ctx.moveTo(-32, -40); ctx.lineTo(-32, -90); ctx.arc(0, -90, 32, Math.PI, 0); ctx.lineTo(32, -40); ctx.lineTo(22, -40); ctx.lineTo(22, -86); ctx.quadraticCurveTo(0, -102, -22, -86); ctx.lineTo(-22, -40); }
   else { ctx.arc(0, -92, 32, Math.PI * 1.02, Math.PI * 1.98); ctx.quadraticCurveTo(10, -104, -31, -86) }
-  ctx.fill();
+  ctx.fill(); if (o.back) circle(0, -90, 31, C.hair); // 背面：整个头都是头发
   if (o.wave) { const a = o.wave; limb(40, -20, 70, -50 - a * 10, 80 + a * 8, -90 - a * 10, C.shirt, 18); circle(80 + a * 8, -92 - a * 10, 10, C.skin) }
   ctx.restore()
+}
+/* 正面 / 背面坐姿（长椅、沙发横着放时用）：y = 座面高度
+   正面：先画靠背和座面，再画人，人挡住身后的靠背、大腿盖住座面；o.legH 座面到地面的高度
+   背面：先画座面，再画人，最后画挡在人前面的靠背；o.raise 0~1 举起手机拍照 */
+function personSeated(x, y, s, o = {}) {
+  const C = Object.assign({}, ME, o.c || {}), lh = o.legH || 52, sleeve = mix(C.shirt, '#000000', .08);
+  const at = fn => { ctx.save(); ctx.translate(x, y + (o.bob || 0)); ctx.scale(s, s); fn(); ctx.restore() };
+  if (!o.back) at(() => [-1, 1].forEach(k => { fillRR(k * 22 - 12, 10, 24, lh - 12, 10, C.pants); ctx.fillStyle = C.shoe; ctx.beginPath(); ctx.ellipse(k * 22, lh - 4, 16, 8, 0, 0, 7); ctx.fill() }));
+  personFront(x, y - 40 * s, s, { c: C, back: o.back, long: o.long, bob: o.bob });
+  at(() => {
+    if (!o.back) { fillRR(-50, -10, 100, 32, 14, mix(C.pants, '#ffffff', .06)); line(0, -6, 0, 20, mix(C.pants, '#000000', .15), 3) }
+    // 手臂贴着身体，不留缝
+    const hand = o.back ? [44, -4] : [32, 2];
+    limb(-40, -62, -50, -30, -hand[0], hand[1], sleeve, 17); if (!o.back) circle(-32, 2, 9, C.skin);
+    const r = o.raise || 0;
+    if (r > 0) { const hx = lerp(hand[0], 40, r), hy = lerp(hand[1], -168, r); limb(40, -62, lerp(50, 62, r), lerp(-30, -112, r), hx, hy, sleeve, 17); fillRR(hx - 22, hy - 40, 44, 30, 5, '#1a1e29'); fillRR(hx - 18, hy - 36, 36, 22, 3, '#7cc4ff') }
+    else { limb(40, -62, 50, -30, hand[0], hand[1], sleeve, 17); if (!o.back) circle(32, 2, 9, C.skin) }
+  })
 }
 /* 机械臂（两段 IK） */
 function robotArm(bx, by, tx, ty, l1 = 170, l2 = 150, o = {}) {

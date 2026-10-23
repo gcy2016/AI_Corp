@@ -107,9 +107,11 @@
     ctx.save(); ctx.globalAlpha = .25; ctx.translate(0, 1120); ctx.scale(1, -1); ridge(-100, 2050, 470, 60, .007, 4, '#3f6f8f', 560); ctx.restore();
     ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 3; for (let i = 0; i < 18; i++) { const r = seeded(500 + i), x = r() * W + Math.sin(t * .8 + i) * 30, y = 600 + r() * 280; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 40 + r() * 60, y); ctx.stroke() }
     ctx.fillStyle = '#8bb07e'; ctx.beginPath(); ctx.moveTo(0, 880); ctx.quadraticCurveTo(900, 840, 1920, 900); ctx.lineTo(1920, 1080); ctx.lineTo(0, 1080); ctx.fill();
-    fillRR(560, 822, 18, 90, 6, '#8a6a52'); fillRR(560, 892, 380, 18, 6, '#8a6a52'); fillRR(580, 910, 14, 38, 4, '#6a4e3b'); fillRR(906, 910, 14, 38, 4, '#6a4e3b');
+    // 背面坐：座面 → 人 → 挡在人前面的靠背
+    fillRR(560, 886, 380, 14, 6, '#9a7a60');
     const shoot = PH.some(([a]) => t > a - .5 && t < a + .4);
-    personSide(624, 892, 1.2, { pose: 'sit', point: shoot ? [6, -4] : undefined, arm: .8, legH: 46 });
+    personSeated(750, 892, 1.2, { back: true, raise: shoot ? 1 : 0 });
+    fillRR(576, 800, 14, 150, 4, '#6a4e3b'); fillRR(910, 800, 14, 150, 4, '#6a4e3b'); fillRR(560, 812, 380, 16, 6, '#8a6a52'); fillRR(560, 846, 380, 16, 6, '#8a6a52'); fillRR(560, 896, 380, 16, 6, '#8a6a52');
     if (dim) { ctx.fillStyle = `rgba(10,18,32,${dim})`; ctx.fillRect(0, 0, W, H) }
   }
   function lakeShots(t) {
