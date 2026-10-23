@@ -14,19 +14,22 @@
 
   function street(t) {
     ctx.fillStyle = vgrad(0, 760, ['#8ec3ef', '#d8ecf7']); ctx.fillRect(0, 0, W, 760);
-    ridge(0, W, 520, 30, .004, 1, '#b9cfe0', 760);
-    [[900, 380, 90], [1060, 300, 70], [1260, 420, 110], [1480, 260, 80], [1700, 360, 120]].forEach(([x, h, w]) => { fillRR(x, 760 - h, w, h + 10, 18, '#c6d6e6'); for (let y = 760 - h + 30; y < 740; y += 36) fillRR(x + 14, y, w - 28, 10, 4, '#b1c5d9') });
-    // apartment
-    fillRR(-20, 80, 720, 700, 0, '#efe6da'); for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) { fillRR(40 + c * 165, 120 + r * 150, 120, 100, 8, '#9fc4e3'); fillRR(40 + c * 165, 210 + r * 150, 120, 8, 2, '#d8cfc2') }
-    fillRR(260, 600, 220, 170, 10, '#6f8aa6'); glass(276, 616, 188, 154, 6, '#9fc4e3', '#c7def0'); line(370, 616, 370, 770, '#6f8aa6', 6);
-    txt('7 栋', 370, 588, 26, '#8a7b68', 600, 'center');
-    tree(80, 770, .9, t); tree(640, 770, .8, t + 2);
+    // 近景：人约 1.8 m 高（184 px），楼层约 3.2 m、路灯约 7 m，楼和高楼都超出画面上边
+    ridge(0, W, 600, 30, .004, 1, '#b9cfe0', 760);
+    [[860, 260, 150], [1040, 120, 120], [1200, -40, 180], [1420, 180, 140], [1600, -40, 200], [1830, 90, 160]].forEach(([x, top, w]) => { fillRR(x, top, w, 780 - top, top < 0 ? 0 : 18, '#c6d6e6'); for (let y = Math.max(top + 30, 10); y < 740; y += 44) fillRR(x + 16, y, w - 32, 12, 4, '#b1c5d9') });
+    // apartment：一楼大门 + 二楼窗户，上面的楼层出画
+    fillRR(-20, -20, 740, 800, 0, '#efe6da'); fillRR(-20, 440, 740, 14, 0, '#e0d4c4'); fillRR(-20, 100, 740, 14, 0, '#e0d4c4');
+    for (let c = 0; c < 3; c++) { fillRR(30 + c * 240, 170, 170, 200, 8, '#9fc4e3'); fillRR(30 + c * 240, 362, 170, 10, 2, '#d8cfc2'); fillRR(30 + c * 240, -20, 170, 90, 8, '#9fc4e3') }
+    fillRR(40, 530, 150, 170, 8, '#9fc4e3'); fillRR(560, 530, 150, 170, 8, '#9fc4e3');
+    fillRR(250, 520, 240, 260, 10, '#6f8aa6'); glass(266, 536, 208, 244, 6, '#9fc4e3', '#c7def0'); line(370, 536, 370, 780, '#6f8aa6', 6);
+    txt('7 栋', 370, 500, 28, '#8a7b68', 600, 'center');
+    tree(120, 770, 1.7, t); tree(640, 770, 1.5, t + 2);
     // sidewalk + road
     ctx.fillStyle = '#d9d4cc'; ctx.fillRect(0, 760, W, 70); ctx.fillStyle = '#5d6573'; ctx.fillRect(0, 830, W, 250);
     ctx.fillStyle = '#e8e8e8'; for (let x = -((t * 0) % 200); x < W; x += 200) ctx.fillRect(x, 950, 110, 8);
     fillRR(0, 826, W, 8, 2, '#b8b2a8');
     // lamp
-    line(820, 770, 820, 520, '#59606d', 8); line(820, 520, 870, 510, '#59606d', 6); fillRR(860, 505, 40, 10, 5, '#ffe9b5');
+    line(820, 770, 820, 70, '#59606d', 12); line(820, 70, 920, 52, '#59606d', 9); fillRR(900, 46, 70, 16, 8, '#ffe9b5');
     // car：车放大到 1.4 倍、人缩到 0.95 倍，人比车矮
     const S = 1.4, CY = 905, PS = .95;
     const arrive = easeOut(prog(t, .8, 4.6)), leave = Math.pow(prog(t, 9.0, 11), 2);
