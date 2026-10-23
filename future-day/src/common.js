@@ -116,8 +116,10 @@ function personSide(x, y, s, o = {}) {
   ctx.save(); ctx.translate(x, y); ctx.scale(s * d, s);
   let hip, sh;
   if (pose === 'sit') {
-    hip = [0, 0]; sh = [-4 + (o.lean || 0), -66];
-    limb(0, 0, 50, 2, 50, 62, C.pants, 22); limb(50, 62, 64, 64, undefined, undefined, C.shoe, 14);
+    // 坐姿：臀部落在座面上（y=0），大腿水平，小腿垂到地面；o.legH = 座面到地面的高度（局部坐标）
+    hip = [0, 0]; sh = [-4 + (o.lean || 0), -62]; const lh = o.legH || 60;
+    fillRR(-22, -18, 50, 30, 14, C.pants);
+    limb(0, 0, 44, 2, 46, lh - 6, C.pants, 22); limb(46, lh - 6, 60, lh - 6, undefined, undefined, C.shoe, 13);
   } else {
     hip = [0, -80]; sh = [2, -142];
     const a = pose === 'walk' ? Math.sin(ph) * .42 : 0, b = -a;

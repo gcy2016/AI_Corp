@@ -24,8 +24,9 @@
     // wall screen
     glass(220, 150, 900, 480, 24); ctx.strokeStyle = '#2a2f3d'; ctx.lineWidth = 12; rr(220, 150, 900, 480, 24); ctx.stroke(); ctx.save(); rr(220, 150, 900, 480, 24); ctx.clip(); dashboard(220, 150, .5625, t); ctx.restore();
     // sofa + person
-    fillRR(200, 700, 760, 140, 40, '#5b7096'); fillRR(200, 640, 760, 110, 40, '#6a80a8'); fillRR(170, 680, 80, 160, 30, '#5b7096'); fillRR(910, 680, 80, 160, 30, '#5b7096');
-    personSide(560, 712, 1.2, { pose: 'sit', lean: -8, arm: .6 }); fillRR(1030, 760, 160, 14, 6, '#c9a27e'); fillRR(1100, 774, 16, 60, 4, '#9b7d62');
+    // 沙发：座面高度按人的小腿长度
+    fillRR(200, 640, 760, 170, 40, '#6a80a8'); fillRR(200, 778, 760, 62, 24, '#5b7096'); fillRR(170, 730, 80, 110, 30, '#5b7096'); fillRR(910, 730, 80, 110, 30, '#5b7096');
+    personSide(520, 778, 1.2, { pose: 'sit', lean: -8, arm: .6, legH: 52 }); fillRR(1030, 760, 160, 14, 6, '#c9a27e'); fillRR(1100, 774, 16, 60, 4, '#9b7d62');
     circle(1120, 740, 18, '#ffffff'); glow(260, 120, 200, '#ffd9a0', .3);
   }
   // 家庭面板（按 1600x800 设计，s 为缩放）

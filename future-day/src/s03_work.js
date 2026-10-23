@@ -1,4 +1,4 @@
-/* 08:00 工作与创造：旅行记忆产品；原型/数据结构/方案；调整；写代码测试；体验修改；发布授权 */
+/* 09:00 工作与创造：旅行记忆产品；原型/数据结构/方案；调整；写代码测试；体验修改；发布授权 */
 (() => {
   const SUBS = [
     { a: 0.8, b: 6.6, text: '居住者打开一个旅行记忆产品的项目。' },
@@ -115,7 +115,7 @@
   }
   function cursor(x, y) { ctx.fillStyle = '#fff'; ctx.strokeStyle = '#0d1420'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + 34); ctx.lineTo(x + 9, y + 26); ctx.lineTo(x + 16, y + 40); ctx.lineTo(x + 22, y + 37); ctx.lineTo(x + 15, y + 23); ctx.lineTo(x + 26, y + 23); ctx.closePath(); ctx.fill(); ctx.stroke() }
   SCENES.push({
-    time: '08:00', title: '工作与创造', dur: DUR, subs: SUBS, draw(t) {
+    time: '09:00', title: '工作与创造', dur: DUR, subs: SUBS, draw(t) {
       if (t < 8.6) { const z = ease(prog(t, 6, 8.6)); camera(lerp(1, 2.2, z), lerp(960, 1130, z), lerp(540, 470, z), () => room(t)) }
       if (t >= 8.0) alpha(ease(prog(t, 8.0, 8.6)), () => ui(t));
     }

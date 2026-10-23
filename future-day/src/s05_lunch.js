@@ -4,7 +4,7 @@
     { a: 0.8, b: 5.4, text: '中午，居住者来到附近的餐厅。' },
     { a: 6.0, b: 12.0, text: '机器人在厨房与餐桌之间往返，完成备餐、送餐和清洁。' },
     { a: 13.8, b: 19.2, text: '桌面显示菜单、食材来源、营养信息和预计出餐时间。' },
-    { a: 19.8, b: 22.8, who: 'ME', text: '一份番茄牛腩饭，少辣。' },
+    { a: 19.8, b: 22.8, who: 'ME', text: '一份土豆牛腩饭，少辣。' },
     { a: 23.2, b: 26.4, who: 'AI', text: '好的，预计十二分钟出餐。' },
     { a: 28.2, b: 35.4, text: '用餐结束后，居住者在庭院里坐了一会儿，看着树木和来往的人群。' },
   ];
@@ -34,8 +34,10 @@
     [380, 820, 1200].forEach(x => { line(x, 0, x, 120, '#6d5a4a', 3); ctx.fillStyle = '#2f3e46'; ctx.beginPath(); ctx.moveTo(x - 40, 150); ctx.lineTo(x - 18, 120); ctx.lineTo(x + 18, 120); ctx.lineTo(x + 40, 150); ctx.fill(); glow(x, 160, 120, '#ffd9a0', .35) });
     // tables
     const table = (x) => { fillRR(x - 130, 700, 260, 16, 6, '#7a5b45'); fillRR(x - 8, 716, 16, 100, 4, '#6a4e3b'); fillRR(x - 60, 812, 120, 8, 4, '#6a4e3b') };
-    personSide(330, 760, 1.05, { pose: 'sit', c: COLS[1], arm: 1.3 }); table(480); personSide(640, 760, 1.05, { pose: 'sit', dir: -1, c: COLS[2], arm: 1.3 });
-    personSide(880, 760, 1.05, { pose: 'sit', arm: 1.2 }); table(1040);
+    const chair = (x, d) => { fillRR(x - 34 * d - 6, 690, 12, 80, 4, '#5a4434'); fillRR(x - 40, 760, 80, 12, 4, '#6a4e3b'); fillRR(x - 34, 772, 8, 44, 3, '#5a4434'); fillRR(x + 26, 772, 8, 44, 3, '#5a4434') };
+    chair(330, 1); chair(640, -1); chair(880, 1);
+    personSide(330, 760, 1.05, { pose: 'sit', c: COLS[1], arm: 1.3, legH: 52 }); table(480); personSide(640, 760, 1.05, { pose: 'sit', dir: -1, c: COLS[2], arm: 1.3, legH: 52 });
+    personSide(880, 760, 1.05, { pose: 'sit', arm: 1.2, legH: 52 }); table(1040);
     fillRR(990, 690, 60, 10, 4, '#fff'); fillRR(450, 690, 70, 10, 4, '#fff');
     // robots
     const b1 = track(t, [[0, 1580, 0], [2, 1580, 0], [5, 1160, 0], [7.5, 1160, 0], [10.5, 1580, 0], [14, 1580, 0]]);
@@ -46,7 +48,7 @@
     chip(1180, 370, '送餐', '3 号桌 · 已送达', '#8ff0c4', easeOut(prog(t, 5.2, 5.7)) * (1 - prog(t, 9, 9.4)));
     chip(260, 640, '清洁', '地面巡检中', '#7cc4ff', easeOut(prog(t, 7.6, 8.1)) * (1 - prog(t, 12, 12.4)));
   }
-  const DISH = [['番茄牛腩饭', '¥32', '牛腩 · 本地牧场 18 km', '蛋白质 32 g · 640 kcal', '12 分钟', '#e5533d'], ['时蔬藜麦沙拉', '¥26', '蔬菜 · 社区农场 3 km', '膳食纤维 11 g · 380 kcal', '6 分钟', '#6fae5a'], ['菌菇豆腐汤', '¥18', '菌菇 · 山区合作社 40 km', '蛋白质 14 g · 210 kcal', '8 分钟', '#d7a46f']];
+  const DISH = [['土豆牛腩饭', '¥32', '牛腩 · 本地牧场 18 km', '蛋白质 32 g · 640 kcal', '12 分钟', '#e5533d'], ['时蔬藜麦沙拉', '¥26', '蔬菜 · 社区农场 3 km', '膳食纤维 11 g · 380 kcal', '6 分钟', '#6fae5a'], ['菌菇豆腐汤', '¥18', '菌菇 · 山区合作社 40 km', '蛋白质 14 g · 210 kcal', '8 分钟', '#d7a46f']];
   function menu(t) {
     ctx.fillStyle = '#9a7556'; ctx.fillRect(0, 0, W, H); for (let i = 0; i < 14; i++) { ctx.fillStyle = i % 2 ? 'rgba(0,0,0,.04)' : 'rgba(255,255,255,.03)'; ctx.fillRect(0, i * 80, W, 40) }
     // dappled shadow
@@ -68,7 +70,7 @@
         if (hl) { pill(X + 400, y + 94, '少辣', '#e8875f', '#fff', 20) }
       })
     });
-    if (t > 23.2) alpha(easeOut(prog(t, 23.2, 23.7)), () => { fillRR(X + 40, Y + Hd - 90, Wd - 80, 60, 16, 'rgba(47,191,113,.2)'); check(X + 80, Y + Hd - 60, 24, '#57d68d'); txt('已下单 · 番茄牛腩饭（少辣） · 预计 12:14 送达', X + 110, Y + Hd - 50, 26, '#8ff0c4', 600); fillRR(X + 900, Y + Hd - 66, 460, 12, 6, 'rgba(255,255,255,.12)'); fillRR(X + 900, Y + Hd - 66, 460 * prog(t, 23.4, 40) * .4, 12, 6, '#57d68d') });
+    if (t > 23.2) alpha(easeOut(prog(t, 23.2, 23.7)), () => { fillRR(X + 40, Y + Hd - 90, Wd - 80, 60, 16, 'rgba(47,191,113,.2)'); check(X + 80, Y + Hd - 60, 24, '#57d68d'); txt('已下单 · 土豆牛腩饭（少辣） · 预计 12:14 送达', X + 110, Y + Hd - 50, 26, '#8ff0c4', 600); fillRR(X + 900, Y + Hd - 66, 460, 12, 6, 'rgba(255,255,255,.12)'); fillRR(X + 900, Y + Hd - 66, 460 * prog(t, 23.4, 40) * .4, 12, 6, '#57d68d') });
     ctx.restore();
   }
   function courtyard(t) {
@@ -76,12 +78,13 @@
     ridge(0, W, 520, 30, .003, 2, '#c7d8c6', 700); fillRR(0, 380, 700, 340, 0, '#e7dccb'); for (let i = 0; i < 4; i++) fillRR(60 + i * 160, 440, 100, 140, 8, '#a9c9e3');
     ctx.fillStyle = '#8fbf7f'; ctx.fillRect(0, 690, W, 390); ctx.fillStyle = '#d9cdb8'; ctx.beginPath(); ctx.moveTo(0, 780); ctx.lineTo(W, 760); ctx.lineTo(W, 860); ctx.lineTo(0, 880); ctx.fill();
     tree(1300, 760, 2.4, t, '#6fa86a', '#5a9156'); tree(300, 720, 1.3, t + 1); tree(1820, 740, 1.5, t + 2);
-    walkers(t, 840, .85, 5, 66);
     // falling leaves
     for (let i = 0; i < 8; i++) { const r = seeded(90 + i), a = (t * .08 + r()) % 1; ctx.save(); ctx.translate(1100 + r() * 400 + Math.sin(a * 12) * 30, 420 + a * 520); ctx.rotate(a * 8); ctx.fillStyle = '#9cc46a'; ctx.beginPath(); ctx.ellipse(0, 0, 9, 4, 0, 0, 7); ctx.fill(); ctx.restore() }
     // bench + person
-    fillRR(1080, 720, 360, 18, 6, '#8a6a52'); fillRR(1100, 738, 14, 60, 4, '#6a4e3b'); fillRR(1406, 738, 14, 60, 4, '#6a4e3b'); fillRR(1080, 650, 360, 16, 6, '#8a6a52');
-    personSide(1230, 718, 1.15, { pose: 'sit', lean: -6, arm: .7, bob: Math.sin(t * .8) * 2 });
+    // 长椅：座面高度按人的小腿长度，人坐在靠背前面
+    fillRR(1086, 650, 12, 96, 4, '#6a4e3b'); fillRR(1080, 664, 360, 16, 6, '#8a6a52'); fillRR(1080, 738, 360, 18, 6, '#8a6a52'); fillRR(1100, 756, 14, 42, 4, '#6a4e3b'); fillRR(1406, 756, 14, 42, 4, '#6a4e3b');
+    personSide(1180, 738, 1.15, { pose: 'sit', lean: -4, arm: .5, legH: 52, bob: Math.sin(t * .8) * 2 });
+    walkers(t, 840, .85, 5, 66);
     for (let i = 0; i < 7; i++) { const r = seeded(120 + i); glow(1050 + r() * 500 + Math.sin(t + i) * 10, 700 + r() * 140, 50, '#ffffff', .25) }
   }
   SCENES.push({

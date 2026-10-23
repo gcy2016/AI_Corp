@@ -1,7 +1,7 @@
-/* 06:30 醒来 */
+/* 07:30 醒来 */
 (()=>{
 const SUBS=[
- {a:5.0,b:10.2,text:'清晨六点半，卧室的窗帘缓缓打开，阳光照进房间。'},
+ {a:5.0,b:10.2,text:'早上七点半，卧室的窗帘缓缓打开，阳光照进房间。'},
  {a:10.6,b:16.4,text:'室内系统根据天气和睡眠状态，调整光线、温度与空气流通。'},
  {a:17.0,b:22.4,text:'床边的屏幕亮起，显示今天的天气、日程和个人事务。'},
  {a:23.0,b:27.0,who:"AI",text:'早上好。今天晴，气温二十二度。'},
@@ -26,10 +26,8 @@ function drawTitle(t){
   ctx.fillStyle=hz;ctx.fillRect(0,0,W,H);
   for(const s of stars){ctx.globalAlpha=(.4+.6*Math.abs(Math.sin(t*1.3+s.p)))*(1-.5*prog(t,2,4.5));ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,7);ctx.fill()}
   ctx.globalAlpha=1;
-  const a1=ease(prog(t,.4,1.5))*(1-prog(t,3.6,4.4)), a2=ease(prog(t,1.3,2.2))*(1-prog(t,3.6,4.4));
-  ctx.globalAlpha=a1; txt('未来的一天',W/2,H/2-10+(1-a1)*16,120,'#ffffff',700,'center');
-  ctx.globalAlpha=a2; ctx.fillStyle='#ffcf9a';ctx.fillRect(W/2-150,H/2+40,300,2);
-  txt('06:30  ·  醒来',W/2,H/2+110,48,'#ffcf9a',400,'center');
+  const a1=ease(prog(t,.4,1.5))*(1-prog(t,3.6,4.4));
+  ctx.globalAlpha=a1; txt('未来的一天',W/2,H/2+40+(1-a1)*16,120,'#ffffff',700,'center');
   ctx.globalAlpha=1;
 }
 
@@ -137,7 +135,7 @@ function drawBedroom(t){
   // screen on table (emissive)
   const on=O.screen??easeOut(prog(t,16.2,16.9));
   if(on>0){ctx.save();ctx.globalAlpha=on;rr(1606,540,128,86,6);const sg=ctx.createLinearGradient(0,540,0,626);sg.addColorStop(0,'#1d3d63');sg.addColorStop(1,'#0f2238');ctx.fillStyle=sg;ctx.fill();
-    txt(O.clock||'06:30',1620,572,20,'#ffffff',700);ctx.fillStyle='#ffd66b';ctx.beginPath();ctx.arc(1712,566,9,0,7);ctx.fill();
+    txt(O.clock||'07:30',1620,572,20,'#ffffff',700);ctx.fillStyle='#ffd66b';ctx.beginPath();ctx.arc(1712,566,9,0,7);ctx.fill();
     ctx.fillStyle='rgba(255,255,255,.18)';rr(1618,584,104,14,4);ctx.fill();rr(1618,604,70,12,4);ctx.fill();
     const sgl=ctx.createRadialGradient(1670,585,10,1670,585,170);sgl.addColorStop(0,'rgba(120,190,255,.25)');sgl.addColorStop(1,'rgba(120,190,255,0)');
     ctx.globalCompositeOperation='lighter';ctx.fillStyle=sgl;ctx.fillRect(1480,420,380,330);ctx.restore()}
@@ -201,7 +199,7 @@ function drawUIShot(t){
   const ag=ctx.createRadialGradient(SX+SW-120,SY+60,10,SX+SW-120,SY+60,520);ag.addColorStop(0,'rgba(255,190,120,.18)');ag.addColorStop(1,'rgba(255,190,120,0)');ctx.fillStyle=ag;ctx.fillRect(SX,SY,SW,SH);
   // header
   const hA=easeOut(prog(t,18.3,19.0));ctx.globalAlpha=hA;
-  txt('06:30',SX+48,SY+112,88,'#ffffff',700);txt('早上好  ·  周六',SX+54,SY+160,30,'#9fb6d4',400);
+  txt('07:30',SX+48,SY+112,88,'#ffffff',700);txt('早上好  ·  周六',SX+54,SY+160,30,'#9fb6d4',400);
   // AI orb
   const ox=SX+SW-96,oy=SY+92,spk=SUBS.some(s=>s.who==='AI'&&t>=s.a&&t<=s.b)?1:0;
   if(spk){for(let i=0;i<3;i++){const ph=(t*1.2+i/3)%1;ctx.strokeStyle=`rgba(140,200,255,${.5*(1-ph)})`;ctx.lineWidth=3;ctx.beginPath();ctx.arc(ox,oy,44+ph*50,0,7);ctx.stroke()}}
@@ -277,7 +275,7 @@ function drawUIShot(t){
 
 
 window.drawBedroom=drawBedroom;
-SCENES.push({time:'06:30',title:'醒来',dur:44.6,subs:SUBS,tagFrom:5.2,draw(t){
+SCENES.push({time:'07:30',title:'醒来',dur:44.6,subs:SUBS,tagFrom:5.2,draw(t){
   ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
   if(t<18.4)drawRoomShot(t);
   if(t>=17.7){ctx.save();ctx.globalAlpha=ease(prog(t,17.85,18.35));drawUIShot(t);ctx.restore()}

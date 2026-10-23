@@ -36,14 +36,14 @@
     for (let i = 0; i < 3; i++) { const r = seeded(300 + i), a = (r() + t * .015) % 1; personSide(lerp(1300, 980, a), lerp(830, 720, a), .26, { pose: 'walk', ph: t * 6 + i, dir: -1, c: { shirt: '#c7a7ff' } }) }
     // gate
     fillRR(130, 560, 26, 380, 6, '#7a5b45'); fillRR(470, 560, 26, 380, 6, '#7a5b45'); fillRR(100, 530, 420, 54, 14, '#8a6a52'); txt('山谷入口', 310, 568, 30, '#fff4e0', 700, 'center');
-    pod(330, 1000, .7, { col: '#f4f6fa' });
+    pod(300, 930, 1.25, { col: '#f4f6fa' });
     // board
     fillRR(735, 720, 20, 220, 4, '#4a5263'); glass(600, 430, 290, 300, 18); ctx.strokeStyle = '#2a2f3d'; ctx.lineWidth = 8; rr(600, 430, 290, 300, 18); ctx.stroke();
     ctx.save(); rr(600, 430, 290, 300, 18); ctx.clip();
     txt('路线与实时人流', 618, 462, 17, '#fff', 700); txt('晴 21℃ · 紫外线 中 · 风 2 级', 618, 486, 11, '#9fd0ff');
     [['湖畔步道', '6.2 km · 平缓', '人流 少', '#57d68d', .3], ['山脊线', '9.8 km · 较陡', '人流 中', '#ffb35a', .6], ['森林环线', '4.1 km · 平缓', '人流 少', '#57d68d', .25]].forEach(([n, d, c, col, p], i) => { const y = 510 + i * 68; fillRR(614, y, 262, 58, 10, 'rgba(255,255,255,.07)'); txt(n, 626, y + 24, 15, '#fff', 700); txt(d, 626, y + 46, 12, '#9fb6d4'); txt(c, 864, y + 24, 12, col, 700, 'right'); fillRR(780, y + 36, 84, 6, 3, 'rgba(255,255,255,.15)'); fillRR(780, y + 36, 84 * p, 6, 3, col) });
     txt('已为你推荐：湖畔步道', 618, 718, 13, '#8ff0c4', 600); ctx.restore();
-    personSide(560, 950, 1.0, { pose: 'stand', arm: .2 });
+    personSide(560, 950, .9, { pose: 'stand', arm: .2 });
   }
   function hike(t) {
     const tw2 = Math.min(t, 17.4), off = 150 * (tw2 - 11.6);
@@ -107,9 +107,9 @@
     ctx.save(); ctx.globalAlpha = .25; ctx.translate(0, 1120); ctx.scale(1, -1); ridge(-100, 2050, 470, 60, .007, 4, '#3f6f8f', 560); ctx.restore();
     ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 3; for (let i = 0; i < 18; i++) { const r = seeded(500 + i), x = r() * W + Math.sin(t * .8 + i) * 30, y = 600 + r() * 280; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 40 + r() * 60, y); ctx.stroke() }
     ctx.fillStyle = '#8bb07e'; ctx.beginPath(); ctx.moveTo(0, 880); ctx.quadraticCurveTo(900, 840, 1920, 900); ctx.lineTo(1920, 1080); ctx.lineTo(0, 1080); ctx.fill();
-    fillRR(560, 870, 380, 18, 6, '#8a6a52'); fillRR(580, 888, 14, 60, 4, '#6a4e3b'); fillRR(906, 888, 14, 60, 4, '#6a4e3b'); fillRR(560, 800, 18, 90, 6, '#8a6a52');
+    fillRR(560, 822, 18, 90, 6, '#8a6a52'); fillRR(560, 892, 380, 18, 6, '#8a6a52'); fillRR(580, 910, 14, 38, 4, '#6a4e3b'); fillRR(906, 910, 14, 38, 4, '#6a4e3b');
     const shoot = PH.some(([a]) => t > a - .5 && t < a + .4);
-    personSide(700, 868, 1.2, { pose: 'sit', point: shoot ? [6, -4] : undefined, arm: .8 });
+    personSide(624, 892, 1.2, { pose: 'sit', point: shoot ? [6, -4] : undefined, arm: .8, legH: 46 });
     if (dim) { ctx.fillStyle = `rgba(10,18,32,${dim})`; ctx.fillRect(0, 0, W, H) }
   }
   function lakeShots(t) {
