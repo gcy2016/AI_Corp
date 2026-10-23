@@ -223,7 +223,7 @@ function hand(x, y, press = 0, sleeve = '#e8875f', rot = -.42) { // 指尖在 (x
   fillRR(-34, 214, 150, 320, 28, sleeve); fillRR(-34, 214, 150, 26, 12, mix(sleeve, '#000000', .1));      // 袖子 + 袖口
   fillRR(-28, 96, 122, 136, 40, skin);                                                                   // 手掌
   [[16, 92, 30, 46], [44, 100, 28, 42], [70, 112, 26, 38]].forEach(([fx, fy, fw, fh]) => { fillRR(fx, fy, fw, fh, fw / 2, skin); line(fx + 4, fy + fh - 6, fx + fw - 4, fy + fh - 6, fold, 3) }); // 弯着的三根手指
-  fillRR(-38, 132, 30, 70, 15, fold);                                                                    // 拇指贴着手掌
+  fillRR(-38, 132, 30, 70, 15, skin); line(-10, 142, -10, 192, fold, 3);                              // 拇指贴着手掌（同肤色，一条细线分开）
   fillRR(-16, 0, 34, 132, 17, skin); fillRR(-8, 8, 18, 24, 9, 'rgba(255,255,255,.35)');                   // 伸出的食指 + 指甲
   ctx.restore()
 }
