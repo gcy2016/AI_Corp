@@ -99,7 +99,7 @@
     const sx = 822, sy = 660 + Math.sin(t * 1.4) * 2, elx = lerp(866, 858, e), ely = lerp(746, 738, e);
     const fa = lerp(Math.atan2(8, -34), Math.atan2(-136, -66) + 2 * Math.PI, e), fl = lerp(35, 151, e);
     const hx = elx + Math.cos(fa) * fl, hy = ely + Math.sin(fa) * fl;
-    limb(sx, sy, elx, ely, hx, hy, mix(ME.shirt, '#000000', .12), 26); circle(hx, hy, 14, ME.skin); line(hx, hy, hx - 40, hy - 10 + e * 20, '#c0c6cf', 5);
+    limb(sx, sy, elx, ely, hx, hy, ME.shirt, 26); circle(hx, hy, 14, ME.skin); line(hx, hy, hx - 40, hy - 10 + e * 20, '#c0c6cf', 5);
     // table
     ctx.fillStyle = '#c79f7b'; ctx.fillRect(0, 760, W, 320); ctx.fillStyle = '#d7b08c'; ctx.fillRect(0, 760, W, 26);
     // table screen strip
