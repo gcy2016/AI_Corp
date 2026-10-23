@@ -25,8 +25,8 @@
     glass(220, 150, 900, 480, 24); ctx.strokeStyle = '#2a2f3d'; ctx.lineWidth = 12; rr(220, 150, 900, 480, 24); ctx.stroke(); ctx.save(); rr(220, 150, 900, 480, 24); ctx.clip(); dashboard(220, 150, .5625, t); ctx.restore();
     // sofa + person
     // 背面坐：人背对镜头看墙上的屏幕，沙发靠背挡在人前面
-    personSeated(560, 790, 1.2, { back: true });
-    fillRR(170, 752, 80, 88, 30, '#4f6286'); fillRR(910, 752, 80, 88, 30, '#4f6286'); fillRR(220, 738, 720, 102, 34, '#5b7096'); fillRR(1030, 760, 160, 14, 6, '#c9a27e'); fillRR(1100, 774, 16, 60, 4, '#9b7d62');
+    personSeated(560, 806, 1.0, { back: true });
+    fillRR(170, 764, 80, 76, 28, '#4f6286'); fillRR(910, 764, 80, 76, 28, '#4f6286'); fillRR(220, 752, 720, 88, 32, '#5b7096'); fillRR(1030, 760, 160, 14, 6, '#c9a27e'); fillRR(1100, 774, 16, 60, 4, '#9b7d62');
     circle(1120, 740, 18, '#ffffff'); glow(260, 120, 200, '#ffd9a0', .3);
   }
   // 家庭面板（按 1600x800 设计，s 为缩放）
@@ -85,7 +85,7 @@
   }
   SCENES.push({
     time: '18:00', title: '日常生活', dur: DUR, subs: SUBS, draw(t) {
-      if (t < 6.8) { const z = ease(prog(t, 4.4, 6.8)); camera(lerp(1, 1.9, z), lerp(960, 670, z), lerp(540, 390, z), () => living(t)) }
+      if (t < 6.8) { const z = ease(prog(t, 4.4, 6.8)); camera(lerp(1, 1.9, z), lerp(960, 670, z), lerp(540, 368, z), () => living(t)) }
       if (t >= 6.2) alpha(ease(prog(t, 6.2, 6.8)), () => screen(t));
     }
   });
