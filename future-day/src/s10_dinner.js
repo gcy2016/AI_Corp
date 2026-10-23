@@ -23,22 +23,22 @@
     room(t, .3);
     // door
     const open = ease(prog(t, .2, 1.2));
-    fillRR(1400, 260, 260, 560, 8, '#2a2230'); ctx.fillStyle = vgrad(260, 820, ['#ffe2b0', '#f2c58a']); ctx.fillRect(1410, 270, 240, 550); fillRR(1410, 270, 240 * (1 - open * .85), 550, 6, '#7a5b45');
-    for (let i = 0; i < 3; i++) { const x = track(t, [[0, 1560 + i * 50, 0], [1 + i * .5, 1560, 0], [4.5 + i * .5, 1220 - i * 160, 0]])[0]; const w = t > 1 + i * .5 && t < 4.5 + i * .5; if (t > .8 + i * .5) personSide(x, 830, 1.15, { pose: w ? 'walk' : 'stand', ph: t * 6.5, dir: -1, c: FR[i], arm: t > 5 ? -2.2 + Math.sin(t * 6) * .3 : undefined }) }
+    fillRR(1430, 532, 160, 298, 6, '#2a2230'); ctx.fillStyle = vgrad(540, 830, ['#ffe2b0', '#f2c58a']); ctx.fillRect(1440, 542, 140, 288); fillRR(1440, 542, 140 * (1 - open * .85), 288, 5, '#7a5b45');
+    for (let i = 0; i < 3; i++) { const x = track(t, [[0, 1510 + i * 50, 0], [1 + i * .5, 1510, 0], [4.5 + i * .5, 1220 - i * 160, 0]])[0]; const w = t > 1 + i * .5 && t < 4.5 + i * .5; if (t > .8 + i * .5) personSide(x, 830, 1.15, { pose: w ? 'walk' : 'stand', ph: t * 6.5, dir: -1, c: FR[i], arm: t > 5 ? -2.2 + Math.sin(t * 6) * .3 : undefined }) }
     personSide(560, 830, 1.15, { pose: 'stand', arm: t > 2.5 && t < 6 ? -2.4 + Math.sin(t * 7) * .3 : undefined });
   }
   function kitchenTable(t) {
     const lamp = ease(prog(t, 8.4, 10.2)); room(t, lamp);
     // kitchen (right)
-    fillRR(1260, 520, 640, 30, 4, '#8b9aa8'); ctx.fillStyle = '#d8d0c6'; ctx.fillRect(1270, 550, 620, 270); glow(1580, 470, 220, '#ff9a5a', .25);
-    fillRR(1460, 494, 150, 28, 10, '#3a4150'); for (let i = 0; i < 6; i++) { const a = (t * .5 + i * .17) % 1; circle(1490 + i * 18 + Math.sin(a * 9) * 8, 480 - a * 140, 8 + a * 16, `rgba(255,255,255,${.3 * (1 - a)})`) }
-    const [ex, ey] = [1530 + Math.sin(t * 3) * 40, 460 + Math.abs(Math.sin(t * 6)) * 10]; fillRR(1480, 40, 120, 16, 8, '#9aa7ba'); robotArm(1540, 56, ex, ey, 230, 220, { grip: .2 });
-    for (let i = 0; i < 5; i++) fillRR(1300 + i * 26, 496, 18, 22, 4, ['#e5533d', '#6fae5a', '#ffd35a', '#e5533d', '#6fae5a'][i]);
+    fillRR(1260, 715, 640, 24, 4, '#8b9aa8'); ctx.fillStyle = '#d8d0c6'; ctx.fillRect(1270, 739, 620, 87); glow(1580, 665, 220, '#ff9a5a', .25);
+    fillRR(1460, 689, 150, 28, 10, '#3a4150'); for (let i = 0; i < 6; i++) { const a = (t * .5 + i * .17) % 1; circle(1490 + i * 18 + Math.sin(a * 9) * 8, 675 - a * 140, 8 + a * 16, `rgba(255,255,255,${.3 * (1 - a)})`) }
+    const [ex, ey] = [1530 + Math.sin(t * 3) * 40, 655 + Math.abs(Math.sin(t * 6)) * 10]; line(1540, 0, 1540, 250, '#9aa7ba', 10); fillRR(1480, 236, 120, 16, 8, '#9aa7ba'); robotArm(1540, 252, ex, ey, 230, 220, { grip: .2 });
+    for (let i = 0; i < 5; i++) fillRR(1300 + i * 26, 691, 18, 22, 4, ['#e5533d', '#6fae5a', '#ffd35a', '#e5533d', '#6fae5a'][i]);
     // table (side)
-    fillRR(420, 640, 700, 22, 8, '#7a5b45'); fillRR(460, 662, 18, 160, 4, '#6a4e3b'); fillRR(1062, 662, 18, 160, 4, '#6a4e3b');
-    [520, 680, 840, 1000].forEach((x, i) => { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(x, 636, 50, 8, 0, 0, 7); ctx.fill(); if (t > 11 - i * .3) { ctx.fillStyle = ['#e5533d', '#d7a46f', '#6fae5a', '#ffd35a'][i]; ctx.beginPath(); ctx.ellipse(x, 630, 30, 8, 0, Math.PI, 0); ctx.fill() } });
+    fillRR(420, 734, 700, 20, 8, '#7a5b45'); fillRR(460, 754, 18, 72, 4, '#6a4e3b'); fillRR(1062, 754, 18, 72, 4, '#6a4e3b');
+    [520, 680, 840, 1000].forEach((x, i) => { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(x, 730, 50, 8, 0, 0, 7); ctx.fill(); if (t > 11 - i * .3) { ctx.fillStyle = ['#e5533d', '#d7a46f', '#6fae5a', '#ffd35a'][i]; ctx.beginPath(); ctx.ellipse(x, 724, 30, 8, 0, Math.PI, 0); ctx.fill() } });
     chip(560, 420, '灯光', `晚餐模式 · ${Math.round(lerp(4000, 2700, lamp))}K · ${Math.round(lerp(100, 60, lamp))}%`, '#ffd27a', easeOut(prog(t, 8.2, 8.8)), 960, 270);
-    chip(1250, 300, '厨房', '4 道菜 · 2 道已完成', '#8ff0c4', easeOut(prog(t, 7.2, 7.8)));
+    chip(1250, 480, '厨房', '4 道菜 · 2 道已完成', '#8ff0c4', easeOut(prog(t, 7.2, 7.8)));
   }
   function frontTable(t, after) {
     room(t, 1);
@@ -88,9 +88,9 @@
   }
   function cleanup(t) {
     room(t, 1);
-    ctx.fillStyle = '#7a5b45'; fillRR(420, 640, 700, 22, 8, '#7a5b45'); fillRR(460, 662, 18, 160, 4, '#6a4e3b'); fillRR(1062, 662, 18, 160, 4, '#6a4e3b');
-    fillRR(1260, 520, 640, 30, 4, '#8b9aa8'); ctx.fillStyle = '#d8d0c6'; ctx.fillRect(1270, 550, 620, 270);
-    const n = 4 - Math.floor(prog(t, 35, 38.5) * 4.99); for (let i = 0; i < n; i++) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(520 + i * 160, 636, 50, 8, 0, 0, 7); ctx.fill() }
+    fillRR(420, 734, 700, 20, 8, '#7a5b45'); fillRR(460, 754, 18, 72, 4, '#6a4e3b'); fillRR(1062, 754, 18, 72, 4, '#6a4e3b');
+    fillRR(1260, 715, 640, 24, 4, '#8b9aa8'); ctx.fillStyle = '#d8d0c6'; ctx.fillRect(1270, 739, 620, 87);
+    const n = 4 - Math.floor(prog(t, 35, 38.5) * 4.99); for (let i = 0; i < n; i++) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(520 + i * 160, 730, 50, 8, 0, 0, 7); ctx.fill() }
     // armTo 是人物局部坐标（肩膀约在 (2,-134)），手端着盘子停在胸前
     personSide(600, 830, 1.15, { pose: 'stand', c: FR[0], armTo: [[22, -104], [52, -110]] }); fillRR(600 + 52 * 1.15 - 38, 830 - 110 * 1.15 - 18, 76, 10, 4, '#fff');
     const wx = track(t, [[34, 900, 0], [37, 1350, 0], [40, 900, 0]])[0], wd = t < 37 ? 1 : -1; personSide(wx, 830, 1.15, { pose: 'walk', ph: t * 6, c: FR[1], dir: wd, armTo: [[22, -104], [52, -110]] }); fillRR(wx + wd * 52 * 1.15 - 32, 830 - 110 * 1.15 - 26, 64, 18, 4, '#fff');
