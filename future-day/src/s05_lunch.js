@@ -81,10 +81,11 @@
     // falling leaves
     for (let i = 0; i < 8; i++) { const r = seeded(90 + i), a = (t * .08 + r()) % 1; ctx.save(); ctx.translate(1100 + r() * 400 + Math.sin(a * 12) * 30, 420 + a * 520); ctx.rotate(a * 8); ctx.fillStyle = '#9cc46a'; ctx.beginPath(); ctx.ellipse(0, 0, 9, 4, 0, 0, 7); ctx.fill(); ctx.restore() }
     // bench + person
-    // 长椅正面：靠背、座面在后，人正面坐在上面，把身后的椅子挡住一部分
-    fillRR(1094, 636, 12, 106, 4, '#6a4e3b'); fillRR(1414, 636, 12, 106, 4, '#6a4e3b'); fillRR(1080, 646, 360, 16, 6, '#8a6a52'); fillRR(1080, 680, 360, 16, 6, '#8a6a52');
-    fillRR(1080, 734, 360, 18, 6, '#9a7a60'); fillRR(1100, 752, 14, 46, 4, '#6a4e3b'); fillRR(1406, 752, 14, 46, 4, '#6a4e3b');
-    personSeated(1260, 738, 1.15, { legH: 52, bob: Math.sin(t * .8) * 1.5 });
+    // 长椅正面：按路人的比例缩小（坐着的人约为站立行人的 3/4 高），人挡住身后的靠背
+    const BX = 1260, BG = 798, BS = .58, BY = BG - 72 * BS, BW = 210;
+    fillRR(BX - BW / 2 + 10, BY - 56, 8, 60, 3, '#6a4e3b'); fillRR(BX + BW / 2 - 18, BY - 56, 8, 60, 3, '#6a4e3b'); fillRR(BX - BW / 2, BY - 50, BW, 10, 4, '#8a6a52'); fillRR(BX - BW / 2, BY - 31, BW, 10, 4, '#8a6a52');
+    fillRR(BX - BW / 2, BY - 3, BW, 12, 4, '#9a7a60'); fillRR(BX - BW / 2 + 12, BY + 9, 9, BG - BY - 9, 3, '#6a4e3b'); fillRR(BX + BW / 2 - 21, BY + 9, 9, BG - BY - 9, 3, '#6a4e3b');
+    personSeated(BX, BY, BS, { legH: 72, bob: Math.sin(t * .8) * 1 });
     walkers(t, 840, .85, 5, 66);
     for (let i = 0; i < 7; i++) { const r = seeded(120 + i); glow(1050 + r() * 500 + Math.sin(t + i) * 10, 700 + r() * 140, 50, '#ffffff', .25) }
   }
