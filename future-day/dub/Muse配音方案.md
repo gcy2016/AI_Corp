@@ -30,8 +30,8 @@
 | 字幕时间轴 | `future-day/src/timeline.json` |
 
 两种获取方式，任选一种：
-- **网页下载**：登录 gcy2016 账号，打开 https://github.com/gcy2016/AI_Corp/tree/main/future-day （新版还没合并到 main 时，改用分支地址 https://github.com/gcy2016/AI_Corp/tree/claude/future-day-video-fixes-lvbjtg/future-day ），分别点进上面三个文件，点右上角的下载按钮（Download raw file）。视频较大（几十 MB），等下载完成再继续。
-- **命令行**：`git clone https://github.com/gcy2016/AI_Corp.git`（已经克隆过就在仓库目录里运行 `git pull`），三个文件就在 `AI_Corp\future-day\` 下。新版还没合并到 main 时，先运行 `git checkout claude/future-day-video-fixes-lvbjtg`。
+- **网页下载**：登录 gcy2016 账号，打开 https://github.com/gcy2016/AI_Corp/tree/main/future-day，分别点进上面三个文件，点右上角的下载按钮（Download raw file）。视频较大（几十 MB），等下载完成再继续。
+- **命令行**：`git clone https://github.com/gcy2016/AI_Corp.git`（已经克隆过就在仓库目录里运行 `git pull`），三个文件就在 `AI_Corp\future-day\` 下。
 
 下载后把三个文件放进同一个文件夹（见方案 A 第 4 步）。
 
