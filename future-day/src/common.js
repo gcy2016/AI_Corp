@@ -217,12 +217,15 @@ function pod(x, y, s, o = {}) {
   ctx.restore()
 }
 /* 指点的手（从右下伸入） */
-function hand(x, y, press = 0, sleeve = '#e8875f', rot = -.42) {
+function hand(x, y, press = 0, sleeve = '#e8875f', rot = -.42) { // 指尖在 (x, y)
   ctx.save(); ctx.translate(x, y); ctx.rotate(rot); const s = 1 - press * .06; ctx.scale(s, s);
-  fillRR(-22, 18, 48, 330, 24, 'rgba(0,0,0,.16)'); fillRR(-58, 250, 170, 260, 26, sleeve);
-  ctx.fillStyle = '#e9b892'; rr(-46, 96, 128, 170, 48); ctx.fill(); rr(14, 104, 32, 74, 16); ctx.fill(); rr(44, 112, 30, 66, 15); ctx.fill();
-  ctx.save(); ctx.translate(-40, 170); ctx.rotate(.5); rr(-17, -10, 34, 96, 17); ctx.fill(); ctx.restore();
-  fillRR(-17, 0, 34, 140, 17, '#f0c6a3'); fillRR(-9, 8, 18, 24, 9, 'rgba(255,255,255,.35)'); ctx.restore()
+  const skin = '#f0c6a3', fold = '#e2b089';
+  fillRR(-34, 214, 150, 320, 28, sleeve); fillRR(-34, 214, 150, 26, 12, mix(sleeve, '#000000', .1));      // 袖子 + 袖口
+  fillRR(-28, 96, 122, 136, 40, skin);                                                                   // 手掌
+  [[16, 92, 30, 46], [44, 100, 28, 42], [70, 112, 26, 38]].forEach(([fx, fy, fw, fh]) => { fillRR(fx, fy, fw, fh, fw / 2, skin); line(fx + 4, fy + fh - 6, fx + fw - 4, fy + fh - 6, fold, 3) }); // 弯着的三根手指
+  fillRR(-38, 132, 30, 70, 15, fold);                                                                    // 拇指贴着手掌
+  fillRR(-16, 0, 34, 132, 17, skin); fillRR(-8, 8, 18, 24, 9, 'rgba(255,255,255,.35)');                   // 伸出的食指 + 指甲
+  ctx.restore()
 }
 function tap(x, y, p) { if (p > .15) { ctx.strokeStyle = `rgba(255,255,255,${p * .8})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, 20 + p * 24, 0, 7); ctx.stroke() } }
 /* 从 a 移到 b 的路径插值（关键帧） */
