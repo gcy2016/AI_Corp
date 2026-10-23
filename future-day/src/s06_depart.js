@@ -129,7 +129,7 @@
       if (t >= 9.5 && t < 20.6) alpha(t < 10.1 ? ease(prog(t, 9.5, 10.1)) : 1, () => camera(1 + .03 * prog(t, 9.5, 20.5), 960, 540, () => map(t)));
       if (t >= 20.0) alpha(ease(prog(t, 20.0, 20.6)), () => {
         const tp = bump(t, 36.4, 37.6), reach = ease(prog(t, 35.8, 36.8)) * (1 - ease(prog(t, 38.2, 39.2)));
-        camera(1.08, 960, 500, () => carInterior(t, { screen: planScreen(t), armTo: reach > 0 ? [[30, -40 - reach * 6], [lerp(44, 120, reach), lerp(-8, -84, reach)]] : undefined }));
+        camera(1.08, 960, 500, () => carInterior(t, { screen: planScreen(t), armTo: reach > 0 ? [[lerp(22, 34, reach), lerp(-30, -58, reach)], [lerp(44, 64, reach), lerp(-8, -74, reach)]] : undefined }));
       });
     }
   });
