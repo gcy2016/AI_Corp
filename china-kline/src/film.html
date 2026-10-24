@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>如果中国历史是一只股票</title>
+<style>
+@font-face{font-family:"Noto Serif SC";font-weight:900;src:url(../fonts/NotoSerifSC-900.woff2)}
+@font-face{font-family:"Noto Serif SC";font-weight:700;src:url(../fonts/NotoSerifSC-700.woff2)}
+@font-face{font-family:"Noto Sans SC";font-weight:400;src:url(../fonts/NotoSansSC-400.woff2)}
+@font-face{font-family:"Noto Sans SC";font-weight:500;src:url(../fonts/NotoSansSC-500.woff2)}
+@font-face{font-family:"Noto Sans SC";font-weight:700;src:url(../fonts/NotoSansSC-700.woff2)}
+@font-face{font-family:"JetBrains Mono";font-weight:400;src:url(../fonts/JetBrainsMono-Regular.ttf)}
+@font-face{font-family:"JetBrains Mono";font-weight:500;src:url(../fonts/JetBrainsMono-Medium.ttf)}
+@font-face{font-family:"JetBrains Mono";font-weight:700;src:url(../fonts/JetBrainsMono-Bold.ttf)}
+body{margin:0;background:#000;color:#aaa;font:14px sans-serif;display:flex;flex-direction:column;align-items:center}
+canvas{height:calc(100vh - 50px);aspect-ratio:9/16}
+#bar{display:flex;gap:10px;align-items:center;height:44px}
+#sk{width:420px}
+</style></head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<div id="bar"><button id="pp">播放/暂停</button><input id="sk" type="range" min="0" step="0.01"><span id="tm"></span></div>
+<audio id="au" src="../bgm.mp3" preload="auto"></audio>
+<script src="data.js"></script>
+<script src="film.js"></script>
+<script>
+// 预览：双击打开即可；把配乐放到 china-kline/bgm.mp3 就会同步播放。空格暂停，←/→ 跳 2 秒
+const main = document.getElementById('c'); ctx = main.getContext('2d');
+const faces = ['900 40px "Noto Serif SC"', '700 40px "Noto Serif SC"', '400 40px "Noto Sans SC"', '500 40px "Noto Sans SC"', '700 40px "Noto Sans SC"', '400 40px "JetBrains Mono"', '500 40px "JetBrains Mono"', '700 40px "JetBrains Mono"'];
+window.ready = Promise.all(faces.map(f => document.fonts.load(f, '中'))).then(() => { drawFilm(0); return true });
+if (!location.search.includes('render')) {
+  const au = document.getElementById('au'), sk = document.getElementById('sk'), tm = document.getElementById('tm');
+  sk.max = TOTAL; let t0 = performance.now(), base = 0, playing = false;
+  const now = () => playing ? base + (performance.now() - t0) / 1000 : base;
+  const seek = t => { base = Math.max(0, Math.min(TOTAL, t)); t0 = performance.now(); au.currentTime = base; };
+  const toggle = () => { base = now(); t0 = performance.now(); playing = !playing; if (playing) { au.currentTime = base; au.play().catch(() => {}) } else au.pause() };
+  document.getElementById('pp').onclick = toggle;
+  sk.oninput = () => seek(+sk.value);
+  addEventListener('keydown', e => { if (e.code === 'Space') { toggle(); e.preventDefault() } if (e.code === 'ArrowRight') seek(now() + 2); if (e.code === 'ArrowLeft') seek(now() - 2) });
+  window.ready.then(function loop() { const t = now(); if (t >= TOTAL && playing) toggle(); drawFilm(Math.min(t, TOTAL)); sk.value = t; tm.textContent = t.toFixed(1) + ' / ' + TOTAL; requestAnimationFrame(loop) });
+}
+</script></body></html>
