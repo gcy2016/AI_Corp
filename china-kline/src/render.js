@@ -2,6 +2,7 @@
 //   node render.js video  out.mp4 ../bgm.mp3        整片 1080x1920 30fps，混入配乐
 //   node render.js stills 12.5 40 100               导出这几个时间点（秒）的截图到 stills/
 //   node render.js clip   30 50 out.mp4 ../bgm.mp3  只渲染 30–50 秒
+// 渲染 B 版：命令前加 VER=b（如 VER=b node render.js video ../out/china-kline-B.mp4 ../bgm.mp3）
 // 依赖：npm i playwright && npx playwright install chromium；需要 ffmpeg
 const { chromium } = require('playwright');
 const { spawn } = require('child_process');
@@ -30,7 +31,7 @@ async function encode(pg, t0, t1, outp, audio) {
   const b = await chromium.launch();
   const pg = await b.newPage({ viewport: { width: 1080, height: 1920 } });
   const errs = []; pg.on('pageerror', e => errs.push(String(e)));
-  await pg.goto(url.pathToFileURL(path.join(__dirname, 'film.html')).href + '?render');
+  await pg.goto(url.pathToFileURL(path.join(__dirname, 'film.html')).href + '?render' + (process.env.VER === 'b' ? '&b' : ''));
   await pg.evaluate('window.ready');
   const total = await pg.evaluate('TOTAL');
   if (mode === 'stills') {

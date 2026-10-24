@@ -13,9 +13,11 @@ const easeIn = k => Math.pow(clamp(k), 2);
 const easeInOut = k => { k = clamp(k); return k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2 };
 const hash = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x) };
 const beatOf = t => (t - PHASE) / BEAT;
+const prevV = e => { const k = EVENTS.indexOf(e); return k ? EVENTS[k - 1].v : 96 };
 const fmtP = v => v.toFixed(2);
 
 // ---------- K 线数据（确定性生成） ----------
+EVENTS.forEach(e => { e.raw = e.v; if (!e.abs) e.v = Math.round(e.v * TREND(e.y)) });
 const CANDLES = [];
 (function build() {
   let s = 20261024; const R = () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
@@ -44,7 +46,7 @@ const STATS = (() => {
     if (e.v >= o * 1.2) up++; if (e.v <= o * .8) down++;
     peak = Math.max(peak, e.v); dd = Math.min(dd, e.v / peak - 1);
   });
-  return { hi, lo, up, down, dd, years: 2070 + 1949 - 1 };
+  return { hi, lo, up, down, dd, years: VERSION.years };
 })();
 
 // 某根 K 线在拍子 bt 时的状态
@@ -88,10 +90,10 @@ function stamp(label, x, y, color, k, rot = -.12, size = 44) {    // 红/绿印�
 function topBar(T, bt) {
   rect(0, 0, W, 82, C.bg);
   text('历史交易所', 36, 52, 24, C.gold, SANS, 500); text('终端 · 新股', 170, 52, 22, C.dim);
-  const st = bt < 32 ? '集合竞价' : bt < END.title ? '连续竞价' : '已休市';
+  const st = bt < 32 ? '集合竞价' : bt < END.title || VERSION.live ? '连续竞价' : '已休市';
   const sw = tw(st, 20, SANS, 700) + 20;
   const clock = new Date((9 * 3600 + 15 * 60 + T * 3) * 1000).toISOString().slice(11, 19);
-  rrect(W - 36 - 150 - sw, 30, sw, 32, 3, bt < END.title ? C.gold : '#55585f');
+  rrect(W - 36 - 150 - sw, 30, sw, 32, 3, bt < END.title || VERSION.live ? C.gold : '#55585f');
   text(st, W - 36 - 150 - sw / 2, 53, 20, '#1a1407', SANS, 700, 'center');
   text(clock, W - 36, 55, 26, C.dim2, MONO, 500, 'right');
   rect(0, 82, W, 1, C.line);
@@ -128,21 +130,22 @@ function header(bt, k) {
   text('中华民生', 116, y + 56, 40, C.text, SERIF, 900);
   text('CHN.4000 · 人民史观板块', 118, y + 84, 18, C.dim);
   const live = bt < END.title;
-  ctx.beginPath(); ctx.arc(W - 150, y + 48, 7, 0, 7); ctx.fillStyle = live ? C.green : C.red; ctx.fill();
-  text(live ? '交易中' : '已休市', W - 36, y + 56, 22, live ? C.green : C.red, SANS, 500, 'right');
+  const on = live || VERSION.live;
+  ctx.beginPath(); ctx.arc(W - 150, y + 48, 7, 0, 7); ctx.fillStyle = on ? C.green : C.red; ctx.fill();
+  text(on ? '交易中' : '已休市', W - 36, y + 56, 22, on ? C.green : C.red, SANS, 500, 'right');
 
   const n = visibleCount(bt), c = n ? CANDLES[n - 1] : null, s = c ? candleAt(c, bt) : { cur: 100 };
   const price = live ? s.cur : EVENTS[EVENTS.length - 1].v;
   const ref = live ? (c ? c.o : 100) : 100;
   const d = price - ref, up = d >= 0, col = up ? C.red : C.green;
   const e = EVENTS[Math.max(0, k)];
-  const yr = live ? e.y : '1949';
+  const yr = live ? e.y : VERSION.endYear;
   const bc = yr.startsWith('前');
   if (bc) text('前', 38, y + 172, 30, C.gold, SERIF, 900);
   const yrText = bc ? yr.slice(1) : yr;
   text(yrText, bc ? 74 : 38, y + 176, 62, C.text, MONO, 700);
   const yx = (bc ? 74 : 38) + tw(yrText, 62, MONO, 700) + 22;
-  text(live ? (e.era ? e.era + ' · ' + e.t : e.t) : '前2070 – 1949', yx, y + 146, 26, C.text, SANS, 500);
+  text(live ? (e.era ? e.era + ' · ' + e.t : e.t) : VERSION.span, yx, y + 146, 26, C.text, SANS, 500);
   text(live ? '民生指数 · 朝代K' : '全景 · 对数坐标', yx, y + 176, 18, C.dim);
   text(fmtP(price), W - 36, y + 170, 68, col, MONO, 700, 'right');
   const pct = (d / ref * 100);
@@ -305,9 +308,9 @@ function stamps(bt) {
 function bigOverlays(bt) {
   const items = [];
   CHAPTERS.forEach((ch, j) => { if (j > 0) items.push({ b: ch.b0, t: ch.name, s: `第 ${j + 1} 章`, col: C.gold2, d: 3 }) });
-  EVENTS.forEach(e => { if (e.big) items.push({ b: e.bigAt || e.b, t: e.big[0], s: e.big[1], col: e.raw < 100 ? '#7fe3c4' : C.gold2, d: 4 }) });
+  EVENTS.forEach(e => { if (e.big) items.push({ b: e.bigAt || e.b, t: e.big[0], s: e.big[1], col: e.v < prevV(e) ? '#7fe3c4' : C.gold2, d: 4 }) });
   items.push({ b: 32, t: '开盘', s: '约公元前 2070 年 · 夏', col: C.red, d: 2.5 });
-  items.push({ b: END.title, t: '四千年', s: '前2070 – 1949', col: C.gold2, d: 3 });
+  items.push({ b: END.title, t: '四千年', s: VERSION.span, col: C.gold2, d: 3 });
   items.forEach(it => {
     const age = bt - it.b; if (age < 0 || age > it.d) return;
     const a = Math.min(easeOut(age / .35), 1 - clamp((age - it.d + .8) / .8));
@@ -396,14 +399,14 @@ function panorama(T, bt) {
     if (c.key >= 0) return { i, v: c.c };
     let s = 0, n = 0; for (let j = Math.max(0, i - 2); j <= Math.min(CANDLES.length - 1, i + 2); j++) { s += CANDLES[j].c; n++ } return { i, v: s / n };
   });
-  const lo = Math.log(80), hi = Math.log(720);
+  const lo = Math.log(VERSION.pano.lo), hi = Math.log(VERSION.pano.hi);
   const X = i => 70 + i / (pts.length - 1) * (W - 200), Y = v => 1180 - (Math.log(v) - lo) / (hi - lo) * 640;
   const appear = easeOut((bt - (END.title + 2.2)) / 1);
   withAlpha(appear, () => {
     rrect(P.x, P.y, P.w, P.h, 4, C.panel, C.line, 1.5);
     text('民生指数 · 全景', 48, 404, 19, C.text, SANS, 500); text('对数坐标', W - 48, 404, 17, C.dim, SANS, 400, 'right');
     rect(40, 420, W - 80, 1, C.line);
-    [100, 200, 400, 600].forEach(v => {
+    VERSION.pano.grid.forEach(v => {
       ctx.setLineDash([4, 8]); ctx.strokeStyle = '#262a31'; ctx.beginPath(); ctx.moveTo(60, Y(v)); ctx.lineTo(W - 120, Y(v)); ctx.stroke(); ctx.setLineDash([]);
       text(String(v), W - 40, Y(v) + 6, 16, C.dim, MONO, 400, 'right');
     });
@@ -427,7 +430,7 @@ function panorama(T, bt) {
       const ci = CANDLES.findIndex(c => c.key === L.i); if (ci > m) return;
       const e = EVENTS[L.i], x = X(ci), y = Y(e.v), k = easeOut((bt - (END.pano + (ci / (pts.length - 1)) * (END.panoEnd - END.pano))) / .6);
       withAlpha(k, () => {
-        const up = L.i === 0 || e.raw >= 150 || L.i === EVENTS.length - 1;
+        const up = L.i === 0 || e.v >= prevV(e) || L.i === EVENTS.length - 1;
         const ty = up ? y - 34 : y + 58;
         ctx.beginPath(); ctx.arc(x, y, 6, 0, 7); ctx.fillStyle = C.gold2; ctx.fill();
         text(L.t, x, ty, 30, C.gold2, SERIF, 900, 'center');
@@ -435,7 +438,7 @@ function panorama(T, bt) {
       });
     });
   });
-  stamp('休市', W - 300, 1150, C.red, (bt - END.stamp) / 1, -.2, 46);
+  stamp(VERSION.panoStamp, W - 300, 1150, C.red, (bt - END.stamp) / 1, -.2, 46);
 }
 
 function report(bt) {
@@ -443,12 +446,12 @@ function report(bt) {
   const a = easeOut((bt - END.report) / .8);
   withAlpha(a, () => {
     text('复盘报告', 40, y + 52, 38, C.gold2, SERIF, 900);
-    text('CHN.4000 · 前2070 – 1949', 232, y + 50, 18, C.dim);
+    text('CHN.4000 · ' + VERSION.span, 232, y + 50, 18, C.dim);
     rect(40, y + 76, W - 80, 1, C.line);
   });
   const items = [
     ['存续时间', `${STATS.years}`, '年'], ['历史最高', `${STATS.hi.v}`, `${STATS.hi.era} · ${STATS.hi.y}`],
-    ['区间涨幅', `+${EVENTS[EVENTS.length - 1].v - 100}%`, '前2070 → 1949'], ['最大回撤', `${(STATS.dd * 100).toFixed(0)}%`, '北宋 → 抗战'],
+    ['区间涨幅', `+${EVENTS[EVENTS.length - 1].v - 100}%`, VERSION.span.replace(' – ', ' → ')], ['最大回撤', `${(STATS.dd * 100).toFixed(0)}%`, VERSION.ddText],
     ['盛世上涨', `${STATS.up}`, '次 · 单根涨超20%'], ['乱世暴跌', `${STATS.down}`, '次 · 单根跌超20%'],
   ];
   items.forEach(([l, v, u], j) => {
@@ -473,7 +476,7 @@ function quote(T, bt) {
     withAlpha(l2, () => text('本固邦宁', W / 2, 980, 132, C.text, SERIF, 900, 'center', 16));
     withAlpha(easeOut((bt - END.quote - 3) / 1.2), () => text('——《尚书》', W / 2 + 260, 1070, 30, C.dim2, SERIF, 700, 'center'));
     withAlpha(easeOut((bt - END.quote - 5) / 1.5), () => text('百姓的日子，才是历史真正的 K 线', W / 2, 1250, 36, C.gold, SANS, 500, 'center', 2));
-    stamp('未完待续', W / 2, 1420, C.red, (bt - END.quote - 8) / 1, -.06, 48);
+    stamp(VERSION.closeStamp, W / 2, 1420, C.red, (bt - END.quote - 8) / 1, -.06, 48);
   });
 }
 

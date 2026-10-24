@@ -18,9 +18,10 @@ canvas{height:calc(100vh - 50px);aspect-ratio:9/16}
 <div id="bar"><button id="pp">播放/暂停</button><input id="sk" type="range" min="0" step="0.01"><span id="tm"></span></div>
 <audio id="au" src="../bgm.mp3" preload="auto"></audio>
 <script src="data.js"></script>
+<script>if (/[?&]b\b/.test(location.search)) document.write('<script src="data_b.js"><\/script>')</script>
 <script src="film.js"></script>
 <script>
-// 预览：双击打开即可；把配乐放到 china-kline/bgm.mp3 就会同步播放。空格暂停，←/→ 跳 2 秒
+// 预览：双击打开即可（A 版）；地址后加 ?b 看 B 版；把配乐放到 china-kline/bgm.mp3 就会同步播放。空格暂停，←/→ 跳 2 秒
 const main = document.getElementById('c'); ctx = main.getContext('2d');
 const faces = ['900 40px "Noto Serif SC"', '700 40px "Noto Serif SC"', '400 40px "Noto Sans SC"', '500 40px "Noto Sans SC"', '700 40px "Noto Sans SC"', '400 40px "JetBrains Mono"', '500 40px "JetBrains Mono"', '700 40px "JetBrains Mono"'];
 window.ready = Promise.all(faces.map(f => document.fonts.load(f, '中'))).then(() => { drawFilm(0); return true });

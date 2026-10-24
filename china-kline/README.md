@@ -3,7 +3,7 @@
 仿《如果霍去病是一只股票》的竖屏短视频。人民史观：百姓日子好就涨，苦就跌。方案见 [PLAN.md](PLAN.md)。
 
 - **A 版（抖音）**：夏 → 1949 年，1080×1920 / 30fps，约 2 分 26 秒，只有背景音乐，没有配音。
-- B 版（自己看，到今天）：还没做。
+- **B 版（自己看）**：夏 → 今天，约 3 分 04 秒。1949 年以前补了侯景之乱、国共内战，明清易代、宋金元战争写明具体事件；1949 年以后分“新中国”“改革开放”两章。
 
 所有画面都由代码逐帧绘制（Canvas 2D，原生 JS）。
 
@@ -11,6 +11,7 @@
 | 路径 | 内容 |
 |---|---|
 | `src/film.html` | 入口。双击用浏览器打开就能预览；把配乐放到 `china-kline/bgm.mp3` 会同步播放。空格暂停，←/→ 跳 2 秒 |
+| `src/data_b.js` | B 版在 A 版基础上的修改和 1949 年以后的数据；预览时地址后加 `?b`，渲染时命令前加 `VER=b` |
 | `src/data.js` | **内容都在这里**：节拍、章节、每根大 K 线（年份、标注、副标题、指数）、全景标注、快讯文字 |
 | `src/film.js` | 画面绘制：开场、交易界面、K 线、印章、大字转场、全景、复盘报告、结束语 |
 | `src/render.js` | 渲染成 MP4（带配乐）或导出截图 |
@@ -32,6 +33,7 @@
     node render.js video ../out/china-kline-A.mp4 ../bgm.mp3   # 整片，约 4 分钟
     node render.js clip 30 50 ../out/clip.mp4 ../bgm.mp3       # 只渲染 30–50 秒
     node render.js stills 18 60 130                            # 截图 → src/stills/
+    VER=b node render.js video ../out/china-kline-B.mp4 ../bgm.mp3   # B 版整片
 
 改了 `data.js` 或 `film.js` 里的中文后，重新生成字体子集（需要 `pip install fonttools brotli` 和 `npm pack @fontsource/noto-serif-sc @fontsource/noto-sans-sc` 解压后的目录）：
 

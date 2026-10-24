@@ -2,8 +2,8 @@
 // 配乐约 112.8 BPM：第 b 拍的时间 = PHASE + b * BEAT；每 32 拍（8 小节，约 17 秒）一个乐句
 const BEAT = 0.5319, PHASE = 0.365;
 const B = b => PHASE + b * BEAT;
-const TOTAL = 146;          // 片长（秒）；音乐在 142–146 秒淡出
-const AUDIO_FADE = [142, 146];
+var TOTAL = 146;          // 片长（秒）；音乐在 142–146 秒淡出
+var AUDIO_FADE = [142, 146];
 
 // 章节：b0 为乐句起点，章节名同时显示在“当前朝代”栏和大字转场里
 const CHAPTERS = [
@@ -74,10 +74,17 @@ const EVENTS = [
 // 上表 v 是“周期值”（只反映治乱起落），实际指数 = 周期值 × 趋势系数，系数从夏的 1.0 线性升到 1949 年的 2.8
 const yearNum = y => y.startsWith('前') ? -parseInt(y.slice(1)) : parseInt(y);
 const TREND = y => 1 + 1.8 * (yearNum(y) + 2070) / 4019;
-EVENTS.forEach(e => { e.raw = e.v; e.v = Math.round(e.v * TREND(e.y)) });
+// （换算在 film.js 里做；abs: true 的事件直接用 v，不乘系数）
 
 // 收尾：b224 大字“四千年”，之后全景走势 + 复盘报告；b256 结束语
 const END = { title: 224, pano: 227, panoEnd: 247, report: 229, stamp: 248, quote: 256 };
+
+// 版本相关的文字
+const VERSION = {
+  span: '前2070 – 1949', years: 2070 + 1949 - 1, endYear: '1949', ddText: '北宋 → 抗战',
+  pano: { lo: 80, hi: 720, grid: [100, 200, 400, 600] },
+  live: false, panoStamp: '休市', closeStamp: '未完待续',
+};
 
 // 全景走势上要标出的点（EVENTS 的序号）
 const PANO_LABELS = [
@@ -85,4 +92,4 @@ const PANO_LABELS = [
   { i: 23, t: '巅峰' }, { i: 31, t: '明末' }, { i: 33, t: '康乾' }, { i: 41, t: '谷底' }, { i: 43, t: '收盘' },
 ];
 
-const TICKER = '◆ 民生指数为艺术化演绎，依据人口、人均产出、寿命、战乱饥荒记录综合估算，非精确统计　◆ 红涨绿跌：百姓日子好就涨，苦就跌　◆ 史实依据《史记》《汉书》等正史及葛剑雄《中国人口史》　◆ 历史不构成投资建议　';
+var TICKER = '◆ 民生指数为艺术化演绎，依据人口、人均产出、寿命、战乱饥荒记录综合估算，非精确统计　◆ 红涨绿跌：百姓日子好就涨，苦就跌　◆ 史实依据《史记》《汉书》等正史及葛剑雄《中国人口史》　◆ 历史不构成投资建议　';
