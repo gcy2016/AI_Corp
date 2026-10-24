@@ -73,7 +73,8 @@ const EVENTS = [
 // 长期趋势：铁器、新作物、水利、人口承载力是一代代积累下来的，不随改朝换代清零。
 // 上表 v 是“周期值”（只反映治乱起落），实际指数 = 周期值 × 趋势系数，系数从夏的 1.0 线性升到 1949 年的 2.8
 const yearNum = y => y.startsWith('前') ? -parseInt(y.slice(1)) : parseInt(y);
-const TREND = y => 1 + 1.8 * (yearNum(y) + 2070) / 4019;
+var TREND_SLOPE = 1.8;
+const TREND = y => 1 + TREND_SLOPE * (yearNum(y) + 2070) / 4019;
 // （换算在 film.js 里做；abs: true 的事件直接用 v，不乘系数）
 
 // 收尾：b224 大字“四千年”，之后全景走势 + 复盘报告；b256 结束语

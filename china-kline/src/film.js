@@ -39,13 +39,15 @@ const CANDLES = [];
   CANDLES.forEach((c, i) => { c.i = i; c.ch = CHAPTERS.reduce((a, ch, j) => c.b0 >= ch.b0 ? j : a, 0) });
 })();
 const STATS = (() => {
-  let hi = EVENTS[0], lo = EVENTS[0], up = 0, down = 0, peak = 0, dd = 0;
+  let hi = EVENTS[0], lo = EVENTS[0], up = 0, down = 0, peak = EVENTS[0], dd = 0, ddFrom, ddTo;
   EVENTS.forEach((e, k) => {
     if (e.v > hi.v) hi = e; if (e.v < lo.v) lo = e;
     const o = k ? EVENTS[k - 1].v : 96;
     if (e.v >= o * 1.2) up++; if (e.v <= o * .8) down++;
-    peak = Math.max(peak, e.v); dd = Math.min(dd, e.v / peak - 1);
+    if (e.v > peak.v) peak = e;
+    if (e.v / peak.v - 1 < dd) { dd = e.v / peak.v - 1; ddFrom = peak; ddTo = e }
   });
+  if (!VERSION.ddText) VERSION.ddText = `${ddFrom.era} → ${ddTo.t}`;
   return { hi, lo, up, down, dd, years: VERSION.years };
 })();
 
