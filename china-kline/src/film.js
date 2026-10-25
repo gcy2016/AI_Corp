@@ -32,6 +32,7 @@ const CANDLES = [];
     if (hitB !== null) kd = Math.min(next - e.b - .1, Math.max(kd, (hitB - e.b + 1.5) / .95));
     CANDLES.push({ b0: e.b, b1: e.b + kd * .95, o, c, h: Math.max(o, c), l: Math.min(o, c), key: k, via: e.via, hitB });
     prev = c;
+    if (e.last && !VERSION.live) return;           // 不再交易（如人物去世）：最后一根之后不再补小 K 线，画面定住
     for (let b = Math.ceil(e.b + kd); b < next; b++) {   // 大 K 线之后的小 K 线：每拍一根，在目标值附近震荡
       const o2 = prev, c2 = o2 + (e.v - o2) * .3 + o2 * (R() - .5) * .04;
       CANDLES.push({ b0: b, b1: b + .9, o: o2, c: c2, h: Math.max(o2, c2), l: Math.min(o2, c2), key: -1 });
@@ -99,6 +100,13 @@ const FALLS = EVENTS.filter(e => e.fall).map(e => {
 });
 const fallMix = bt => FALLS.reduce((m, f) => Math.max(m, clamp((bt - f.b0) / .6) * clamp((f.b1 - bt) / 2)), 0);
 
+// 三连板以上的涨停印章每拍落一个（中间有停顿，看得清是怎么连板的）；最多 5 个，并且要在下一根大 K 线出来之前落完
+const STAMP_GAP = 1;
+function stampCount(k, streak) {
+  const e = EVENTS[k], start = e.b + (e.big && !e.bigAt ? 3.6 : 0), next = k + 1 < EVENTS.length ? EVENTS[k + 1].b : END.title;
+  const gap = streak >= 3 ? STAMP_GAP : .25;
+  return Math.max(1, Math.min(streak, 5, Math.floor((next - .2 - start - .25) / gap) + 1));
+}
 // 连板鼓点：三连板及以上时，每个“涨停”印章落下的那一拍叠一声鼓（drum.wav），和 stamps() 的出现时间一致
 const DRUMS = (() => {
   const out = [];
@@ -108,7 +116,7 @@ const DRUMS = (() => {
     for (let j = k; j >= 0; j--) { const oo = j ? EVENTS[j - 1].v : 96; if (EVENTS[j].v >= oo * 1.18) streak++; else break }
     if (streak < 3) return;
     const start = e.b + (e.big && !e.bigAt ? 3.6 : 0);
-    for (let j = 0; j < Math.min(streak, 5); j++) out.push(+B(start + .25 + j * .25).toFixed(3));
+    for (let j = 0; j < stampCount(k, streak); j++) out.push(+B(start + .25 + j * STAMP_GAP).toFixed(3));
   });
   return out;
 })();
@@ -381,14 +389,15 @@ function namePanel(bt, k) {
 function stamps(bt) {
   const k = eventIndex(bt); if (k < 0) return;
   const e = EVENTS[k], o = k ? EVENTS[k - 1].v : 96, r = e.v / o;
-  const age = bt - e.b - (e.big && !e.bigAt ? 3.6 : 0); if (age > 5 || age < 0 || e.last) return;   // 有大字转场的，等转场结束再盖章
+  const age = bt - e.b - (e.big && !e.bigAt ? 3.6 : 0); if (age > 6 || age < 0 || e.last) return;   // 有大字转场的，等转场结束再盖章
   let streak = 0;
   for (let j = k; j >= 0; j--) { const oo = j ? EVENTS[j - 1].v : 96; if (EVENTS[j].v >= oo * 1.18) streak++; else break }
-  const fade = 1 - clamp((age - 4) / 1);
+  const fade = 1 - clamp((age - 5) / 1);
   withAlpha(fade, () => {
     if (r >= 1.18) {
       if (streak >= 2) text(['', '', '二', '三', '四', '五'][Math.min(streak, 5)] + '连板', 300, 560, 46, C.gold2, SERIF, 900, 'center');
-      for (let j = 0; j < Math.min(streak, 5); j++) stamp('涨停', 300, 620 + j * 74, C.red, (age - .25 - j * .25) / 1, -.08, 44, streak >= 3 ? 8 : 1.6);   // 三连板以上：印章瞬间落下，和鼓点同一帧
+      const gap = streak >= 3 ? STAMP_GAP : .25, nS = stampCount(k, streak);
+      for (let j = 0; j < nS; j++) stamp('涨停', 300, 620 + j * 74, C.red, (age - .25 - j * gap) / 1, -.08, 44, streak >= 3 ? 8 : 1.6);   // 三连板以上：每拍落一个，瞬间落下，和鼓点同一帧
     } else if (r <= .82) {
       for (let j = 0; j < (r <= .6 ? 3 : r <= .72 ? 2 : 1); j++) stamp('跌停', 300, 880 + j * 74, '#159a76', (age - .2 - j * .25) / 1, .08);
     }
