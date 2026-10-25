@@ -1,6 +1,6 @@
 """合成两个音效，输出到 .claude/skills/kline-video/（可用第一个参数改目录）
   （accent.wav 已改用参考视频里提取的原声，见 extract_accent.py；下面合成的强调音只用来复用部分素材）
-  fall.wav：“陨落”重击音（仿参考视频吕布白门楼处）：更深的低频重击 + 下坠的音调 + 碎裂噪声；之后配乐发闷由 render.js 处理
+  fall_synth.wav（旧，已不用；现在的 fall.wav 由 fall_drum.py 生成）：“陨落”重击音（仿参考视频吕布白门楼处）：更深的低频重击 + 下坠的音调 + 碎裂噪声；之后配乐发闷由 render.js 处理
   python accent.py [输出目录]
 参考视频里这个音：40–55 Hz 的“咚”约 0.7 秒；基音约 174 Hz（F3），3、4 倍泛音明显，约 2 秒衰减完；开头 1–4 kHz 突然变亮。
 """
@@ -64,4 +64,4 @@ wet = wet / np.abs(wet).max() * np.abs(dry).max()
 out = dry + .4 * wet
 out *= np.minimum(1, (DUR - t) / .3)
 out = out / np.abs(out).max() * .89
-save('fall.wav', out)
+save('fall_synth.wav', out)   # 旧的合成陨落音，已改用 fall_drum.py 生成的 fall.wav，这里只留作对照
