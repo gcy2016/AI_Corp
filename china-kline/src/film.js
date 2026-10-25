@@ -74,6 +74,14 @@ const STATS = (() => {
 
 // 高光时刻强调音：数据里标了 hit: true 的事件，在它的大字（或 K 线）开始那一拍叠一个强调音，时间给 render.js 混音用
 const HITS = EVENTS.filter(e => e.hit).map(e => +B(e.bigAt || e.b).toFixed(3));
+// 陨落效果：标了 fall: true 的大阴线。从它那一拍开始画面褪成黑白、配乐发闷，到下一章开始时恢复
+// （至少 6 拍、最多 12 拍；后面没有 K 线时在全景之前恢复）。b0/b1 是拍子，t0/t1 是秒，给 render.js 做闷音用
+const FALLS = EVENTS.filter(e => e.fall).map(e => {
+  const b0 = e.bigAt || e.b, nextCh = CHAPTERS.map(c => c.b0).find(x => x > b0) ?? END.title;
+  const b1 = clamp(Math.min(nextCh, END.title), b0 + 6, b0 + 12);
+  return { e, b0, b1, t0: +B(b0).toFixed(3), t1: +B(b1).toFixed(3) };
+});
+const fallMix = bt => FALLS.reduce((m, f) => Math.max(m, clamp((bt - f.b0) / .6) * clamp((f.b1 - bt) / 2)), 0);
 
 // 某根 K 线在拍子 bt 时的状态
 function candleAt(c, bt) {      // 盘中：价格沿 pathAt 抖动，影线随已走过的最高/最低价长出来
@@ -362,7 +370,7 @@ function stamps(bt) {
 function bigOverlays(bt) {
   const items = [];
   CHAPTERS.forEach((ch, j) => { if (j > 0) items.push({ b: ch.b0, t: ch.name, s: `第 ${j + 1} 章`, col: C.gold2, d: 3 }) });
-  EVENTS.forEach(e => { if (e.big) items.push({ b: e.bigAt || e.b, t: e.big[0], s: e.big[1], col: e.v < prevV(e) ? '#7fe3c4' : C.gold2, d: 4 }) });
+  EVENTS.forEach(e => { if (e.big && !e.fall) items.push({ b: e.bigAt || e.b, t: e.big[0], s: e.big[1], col: e.v < prevV(e) ? '#7fe3c4' : C.gold2, d: 4 }) });
   items.push({ b: 32, t: '开盘', s: TX.open, col: C.red, d: 2.5 });
   items.push({ b: END.title, t: TX.span, s: VERSION.span, col: C.gold2, d: 3 });
   items.forEach(it => {
@@ -460,6 +468,41 @@ function disclaimer(bt) {
     if (bt < 32) text(TX.disclaimer, W / 2, 1772, 22, C.dim, SANS, 400, 'center', 2);
     else if (bt < END.quote) text(TX.disclaimer, W - 40, 1346, 18, C.dim, SANS, 400, 'right');
     else text(TX.disclaimer, W / 2, 1772, 22, C.dim, SANS, 400, 'center', 2);
+  });
+}
+
+// 陨落：整帧褪成黑白，开头闪白，大字带红蓝错位和横向撕裂，约 2 拍后稳定，之后偶尔闪一下
+let OFF;
+function fallFx(T, bt) {
+  const m = fallMix(bt); if (m <= 0) return;
+  OFF = OFF || Object.assign(document.createElement('canvas'), { width: W, height: H });
+  const o = OFF.getContext('2d'); o.clearRect(0, 0, W, H); o.drawImage(ctx.canvas, 0, 0);
+  ctx.save(); ctx.filter = `grayscale(${m}) brightness(${1 - .12 * m})`; ctx.drawImage(OFF, 0, 0); ctx.restore();
+  FALLS.forEach(f => {
+    const age = bt - f.b0; if (age < 0 || age > f.b1 - f.b0) return;
+    const fl = 1 - clamp(age / .35); if (fl > 0) withAlpha(fl * .7, () => rect(0, 0, W, H, '#fff'));
+    const a = Math.min(easeOut(age / .3), clamp((f.b1 - bt) / 1.5));
+    const fr = Math.floor(T * 30), flick = hash(fr * 3.1) > .93 ? .6 : 0;
+    const g = Math.max(1 - clamp(age / 2), flick) ;            // 故障强度
+    withAlpha(a * .62, () => rect(0, 366, W, 930, '#08090c'));
+    const [t1, t2] = f.e.big || [f.e.t, f.e.s];
+    // 先把大字画到离屏画布，再按横条切片错位贴回来
+    o.clearRect(0, 0, W, H);
+    o.font = `900 ${t1.length > 4 ? 120 : 150}px ${SERIF}`; o.textAlign = 'center'; o.letterSpacing = '8px';
+    o.fillStyle = '#d8d8d8'; o.fillText(t1, W / 2, 840);
+    o.font = `400 28px ${SANS}`; o.letterSpacing = '4px'; o.fillStyle = '#9a9ea6'; o.fillText(t2, W / 2, 910);
+    withAlpha(a, () => {
+      const sh = 14 * g;
+      if (g > .02) {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha *= .55; ctx.filter = 'sepia(1) saturate(8) hue-rotate(-50deg)'; ctx.drawImage(OFF, -sh, 0);
+        ctx.filter = 'sepia(1) saturate(8) hue-rotate(140deg)'; ctx.drawImage(OFF, sh, 0); ctx.restore();
+      }
+      for (let y = 700; y < 940; y += 12) {
+        const dx = g > .02 && hash(fr * 7 + y) > .6 ? (hash(fr + y * .37) - .5) * 60 * g : 0;
+        ctx.drawImage(OFF, 0, y, W, 12, dx, y, W, 12);
+      }
+    });
   });
 }
 
@@ -570,6 +613,7 @@ function drawFilm(T) {
   topBar(T, bt); ticker(T);
   if (bt >= END.quote) quote(T, bt);
   disclaimer(bt);
+  fallFx(T, bt);
   const fo = clamp((T - (TOTAL - 2)) / 2); if (fo > 0) withAlpha(fo, () => rect(0, 0, W, H, '#000'));
   ctx.restore();
 }

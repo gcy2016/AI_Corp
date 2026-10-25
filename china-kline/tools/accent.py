@@ -1,5 +1,7 @@
-"""合成“高光时刻”强调音（仿参考视频赤壁之战处的音效）：低频轰鸣 + F 音铜锣长音 + 镲片 + 简单混响
-  python accent.py <输出.wav>      默认输出到 .claude/skills/kline-video/accent.wav
+"""合成两个音效，输出到 .claude/skills/kline-video/（可用第一个参数改目录）
+  accent.wav：“高光时刻”强调音（仿参考视频赤壁之战处）：低频轰鸣 + F 音铜锣长音 + 镲片 + 简单混响
+  fall.wav：“陨落”重击音（仿参考视频吕布白门楼处）：更深的低频重击 + 下坠的音调 + 碎裂噪声；之后配乐发闷由 render.js 处理
+  python accent.py [输出目录]
 参考视频里这个音：40–55 Hz 的“咚”约 0.7 秒；基音约 174 Hz（F3），3、4 倍泛音明显，约 2 秒衰减完；开头 1–4 kHz 突然变亮。
 """
 import sys, wave, pathlib
@@ -39,8 +41,27 @@ out *= np.minimum(1, (DUR - t) / .3)          # 结尾 0.3 秒淡出
 out = out / np.abs(out).max() * .89
 # 立体声：混响部分左右略有差异
 L = out; R = np.roll(out, 90) * .97 + out * .03
-pcm = (np.stack([L, R], 1) * 32767).astype(np.int16)
-outp = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else pathlib.Path(__file__).resolve().parents[2] / '.claude/skills/kline-video/accent.wav')
-with wave.open(str(outp), 'wb') as w:
-    w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes(pcm.tobytes())
-print(outp, f"{DUR}s")
+def save(name, out):
+    L = out; R = np.roll(out, 90) * .97 + out * .03
+    pcm = (np.stack([L, R], 1) * 32767).astype(np.int16)
+    d = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else pathlib.Path(__file__).resolve().parents[2] / '.claude/skills/kline-video'
+    with wave.open(str(d / name), 'wb') as w:
+        w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes(pcm.tobytes())
+    print(d / name, f"{DUR}s")
+
+save('accent.wav', out)
+
+# 陨落：70 Hz 滑到 28 Hz 的深重击 + 从 320 Hz 往下坠到 55 Hz 的音调 + 碎裂噪声（中频带通、快衰减）
+f = 28 + 42 * np.exp(-t / .35)
+sub = np.sin(2 * np.pi * np.cumsum(f) / SR) * env(.003, .7)
+fd = 55 + 265 * np.exp(-t / .5)
+drop = (np.sin(2 * np.pi * np.cumsum(fd) / SR) + .4 * np.sin(4 * np.pi * np.cumsum(fd) / SR)) * env(.01, .6)
+bp = np.convolve(n, np.ones(8) / 8, 'same') - np.convolve(n, np.ones(60) / 60, 'same')
+shatter = bp * env(.002, .25) * 2.2
+dry = .95 * sub + .5 * thump + .35 * drop + .4 * shatter
+wet = np.convolve(dry, ir)[:len(t)]
+wet = wet / np.abs(wet).max() * np.abs(dry).max()
+out = dry + .4 * wet
+out *= np.minimum(1, (DUR - t) / .3)
+out = out / np.abs(out).max() * .89
+save('fall.wav', out)
