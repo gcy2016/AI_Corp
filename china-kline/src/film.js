@@ -598,7 +598,7 @@ function report(bt) {
   });
   const items = [
     [TX.report[0], `${STATS.years}`, '年'], ['历史最高', `${STATS.hi.v}`, `${STATS.hi.era} · ${STATS.hi.y}`],
-    ['区间涨幅', `+${EVENTS[EVENTS.length - 1].v - 100}%`, VERSION.span.replace(' – ', ' → ')], ['最大回撤', `${(STATS.dd * 100).toFixed(0)}%`, VERSION.ddText],
+    ['区间涨幅', `${EVENTS[EVENTS.length - 1].v >= 100 ? '+' : ''}${EVENTS[EVENTS.length - 1].v - 100}%`, VERSION.span.replace(' – ', ' → ')], ['最大回撤', `${(STATS.dd * 100).toFixed(0)}%`, VERSION.ddText],
     [TX.report[1], `${STATS.up}`, '次 · 单根涨超20%'], [TX.report[2], `${STATS.down}`, '次 · 单根跌超20%'],
   ];
   items.forEach(([l, v, u], j) => {
@@ -606,7 +606,7 @@ function report(bt) {
     const x = 40 + (j % 2) * 520, yy = y + 136 + Math.floor(j / 2) * 118;
     withAlpha(k, () => {
       text(l, x, yy, 20, C.dim);
-      const col = j === 3 || j === 5 ? C.green : j === 4 || j === 1 || j === 2 ? C.red : C.text;
+      const col = j === 3 || j === 5 || (j === 2 && EVENTS[EVENTS.length - 1].v < 100) ? C.green : j === 4 || j === 1 || j === 2 ? C.red : C.text;
       text(v, x, yy + 54, 50, col, MONO, 700);
       text(u, x + tw(v, 50, MONO, 700) + 12, yy + 52, 20, C.dim2);
     });
