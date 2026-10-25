@@ -12,8 +12,18 @@ const FPS = 30, GRAB = T => { drawFilm(T); return main.toDataURL('image/jpeg', 0
 async function encode(pg, t0, t1, outp, audio) {
   const fade = await pg.evaluate('AUDIO_FADE');
   const args = ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-'];
-  if (audio) args.push('-ss', t0.toFixed(3), '-t', (t1 - t0).toFixed(3), '-i', audio,
-    '-af', `afade=t=out:st=${Math.max(0, fade[0] - t0).toFixed(3)}:d=${(fade[1] - fade[0]).toFixed(3)}`, '-c:a', 'aac', '-b:a', '192k', '-shortest');
+  if (audio) {
+    // 强调音：和配乐放在同一目录的 accent.wav，在 HITS 的每个时间点叠一次
+    const accent = path.join(path.dirname(audio), 'accent.wav');
+    const hits = fs.existsSync(accent) ? (await pg.evaluate('HITS')).filter(h => h >= t0 && h < t1) : [];
+    args.push('-ss', t0.toFixed(3), '-t', (t1 - t0).toFixed(3), '-i', audio);
+    hits.forEach(() => args.push('-i', accent));
+    let fc = `[1:a]afade=t=out:st=${Math.max(0, fade[0] - t0).toFixed(3)}:d=${(fade[1] - fade[0]).toFixed(3)}[m]`;
+    hits.forEach((h, i) => { const ms = Math.round((h - t0) * 1000); fc += `;[${i + 2}:a]adelay=${ms}|${ms},volume=0.85[h${i}]` });
+    fc += hits.length ? `;[m]${hits.map((_, i) => `[h${i}]`).join('')}amix=inputs=${hits.length + 1}:normalize=0:duration=first,alimiter=limit=0.95[a]` : ';[m]anull[a]';
+    args.push('-filter_complex', fc, '-map', '0:v', '-map', '[a]', '-c:a', 'aac', '-b:a', '192k', '-shortest');
+    console.log('accent hits:', hits.join(', '));
+  }
   args.push('-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', outp);
   const ff = spawn('ffmpeg', args, { stdio: ['pipe', 'inherit', 'inherit'] });
   const done = new Promise(r => ff.on('close', r));

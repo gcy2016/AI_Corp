@@ -72,6 +72,9 @@ const STATS = (() => {
   return { hi, lo, up, down, dd, years: VERSION.years };
 })();
 
+// 高光时刻强调音：数据里标了 hit: true 的事件，在它的大字（或 K 线）开始那一拍叠一个强调音，时间给 render.js 混音用
+const HITS = EVENTS.filter(e => e.hit).map(e => +B(e.bigAt || e.b).toFixed(3));
+
 // 某根 K 线在拍子 bt 时的状态
 function candleAt(c, bt) {      // 盘中：价格沿 pathAt 抖动，影线随已走过的最高/最低价长出来
   const p = clamp((bt - c.b0) / (c.b1 - c.b0));
@@ -139,7 +142,7 @@ function ticker(T) {
 const CH = { x0: 40, x1: 950, y0: 450, y1: 1220 };   // K 线绘图区
 // 镜头：画面里能看到多少根 K 线。K 线少时近景，越多越拉远（最多 34 根）；
 // 重大事件（有大字转场，或单根涨跌超过 25%）时推近到约 9 根，停 3 拍后用 5 拍慢慢拉回
-const ZOOM_IN = 9, WIN_MIN = 10, WIN_MAX = 34;
+const ZOOM_IN = 9, WIN_MIN = 10, WIN_MAX = 24;
 const MAJOR = EVENTS.map((e, k) => { const o = k ? EVENTS[k - 1].v : 96; return e.big || e.v >= o * 1.25 || e.v <= o * .78 ? e.b : null }).filter(b => b !== null);
 function nwin(bt) {
   const n = visibleCount(bt); if (!n) return WIN_MIN;
@@ -261,13 +264,25 @@ function chart(T, bt) {
 
   // 事件标注：最近 3 个大 K 线
   const keys = []; for (let i = n - 1; i >= i0 && keys.length < 3; i--) if (CANDLES[i].key >= 0) keys.push(CANDLES[i]);
+  const placed = [];   // 已放好的标注框，新的在前；旧标注撞上就挪到上方或下方
   keys.forEach((c, j) => {
     const e = EVENTS[c.key], s = candleAt(c, bt), x = X(c.i), up = c.c >= c.o;
     const a = easeOut((bt - c.b0) / .8) * (j === 0 ? 1 : j === 1 ? .7 : .4);
+    const anchor = up ? Y(s.h) - 14 : Y(s.l) + 14;
+    const right = x < CH.x0 + 330;
+    const w = Math.max(tw(e.t, 32, SERIF, 900), tw(`${e.y} · ${e.s}`, 18, SANS, 400));
+    const bx0 = right ? x + 22 : x - 22 - w, bx1 = bx0 + w;
+    const box = ty => { const nY = up ? ty - 8 : ty - 20; return [nY - 34, nY + 36]; };
+    const hit = ty => { const [a0, a1] = box(ty); return placed.some(p => bx0 < p[2] && p[0] < bx1 && a0 < p[3] && p[1] < a1); };
+    let ty = up ? Math.max(CH.y0 + 30, anchor - 70) : Math.min(CH.y1 - 20, anchor + 60);
+    if (hit(ty)) {
+      const [t0, t1] = box(ty), off = t0 - ty, h = t1 - t0, cands = [];
+      placed.forEach(p => cands.push(p[1] - 6 - h - off, p[3] + 6 - off));
+      const ok = cands.filter(t => box(t)[0] >= CH.y0 + 4 && box(t)[1] <= CH.y1 - 4 && !hit(t)).sort((p, q) => Math.abs(p - ty) - Math.abs(q - ty));
+      if (ok.length) ty = ok[0];
+    }
+    { const [a0, a1] = box(ty); placed.push([bx0, a0, bx1, a1]); }
     withAlpha(a, () => {
-      const anchor = up ? Y(s.h) - 14 : Y(s.l) + 14;
-      const ty = up ? Math.max(CH.y0 + 30, anchor - 70) : Math.min(CH.y1 - 20, anchor + 60);
-      const right = x < CH.x0 + 330;
       const lx = right ? x + 22 : x - 22, al = right ? 'left' : 'right';
       ctx.strokeStyle = 'rgba(235,231,222,.45)'; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(x, anchor); ctx.lineTo(x, ty - (up ? 0 : 30)); ctx.lineTo(lx, ty - (up ? 0 : 30)); ctx.stroke();
@@ -369,20 +384,7 @@ function bigOverlays(bt) {
 // ---------- 开场 ----------
 function intro(T, bt) {
   rect(0, 83, W, H - 83, C.bg); vignette();
-  if (bt < 8) {          // 标题逐字出现
-    const lines = TX.title;
-    rect(64, 690, 10, 330, C.gold);
-    let idx = 0;
-    lines.forEach((l, li) => {
-      [...l].forEach((ch, ci) => {
-        const k = easeOut((bt - .3 - idx * .45) / .5); idx++;
-        withAlpha(k, () => text(ch, 110 + ci * 132, 830 + li * 160 + (1 - k) * 30, 128, C.text, SERIF, 900));
-      });
-    });
-    withAlpha(easeOut((bt - 5.8) / 1), () => text(TX.tagline, 112, 1110, 32, C.gold, SANS, 500));
-    withAlpha(1 - clamp((bt - 7.4) / .6), () => { });
-    return;
-  }
+  if (bt < 8) { cover(bt); return }   // 封面：第一帧就是完整画面
   if (bt < 22) {         // 股票信息卡
     const a = easeOut((bt - 8) / .6);
     withAlpha(a, () => {
@@ -426,6 +428,38 @@ function intro(T, bt) {
     text(fmtP(v), W / 2, 1010, 200, '#f4f1ea', MONO, 700, 'center'); ctx.restore();
     rect(W / 2 - 230, 1060, 460, 1, '#3a3d44');
     text(settle ? '预计开盘价 · 撮合完成' : '预计开盘价 · 撮合中', W / 2, 1110, 26, C.gold, SANS, 500, 'center', 3);
+  });
+}
+
+// 封面：三行粗体大字 + 背后的走势简图 + 细线 + 免责小字；第 6–8 拍淡出到信息卡
+function cover(bt) {
+  const a = 1 - clamp((bt - 6.5) / 1.5);
+  withAlpha(a, () => {
+    // 走势简图：全片收盘价（对数），淡金色细线，横贯标题区
+    const vs = CANDLES.map(c => Math.log(c.c)), lo = Math.min(...vs), hi = Math.max(...vs);
+    ctx.save(); ctx.beginPath();
+    vs.forEach((v, i) => { const x = 50 + i / (vs.length - 1) * (W - 100), y = 1080 - (v - lo) / (hi - lo) * 440; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y) });
+    ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(217,174,91,.55)'; ctx.lineWidth = 3; ctx.shadowColor = 'rgba(217,174,91,.6)'; ctx.shadowBlur = 10; ctx.stroke(); ctx.restore();
+    const col = { w: '#f2efe8', g: C.gold, r: C.red }, sizes = [92, 190, 112], ys = [790, 1000, 1150];
+    TX.cover.forEach((line, li) => {
+      const size = sizes[li], total = line.reduce((t, [str]) => t + tw(str, size, SANS, 700, 4), 0);
+      let x = (W - total) / 2;
+      ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.85)'; ctx.shadowBlur = 24;
+      line.forEach(([str, c]) => { text(str, x, ys[li], size, col[c], SANS, 700, 'left', 4); x += tw(str, size, SANS, 700, 4) });
+      ctx.restore();
+    });
+    rect(W / 2 - 280, 1205, 560, 2, 'rgba(217,174,91,.7)');
+    text(TX.disclaimer, W / 2, 1262, 30, C.dim2, SANS, 400, 'center', 2);
+  });
+}
+// 免责小字：全片都显示（封面上画在细线下面，这里管其余时间）
+function disclaimer(bt) {
+  if (bt < 6.5) return;
+  const a = clamp((bt - 6.5) / 1.5);
+  withAlpha(a, () => {
+    if (bt < 32) text(TX.disclaimer, W / 2, 1772, 22, C.dim, SANS, 400, 'center', 2);
+    else if (bt < END.quote) text(TX.disclaimer, W - 40, 1346, 18, C.dim, SANS, 400, 'right');
+    else text(TX.disclaimer, W / 2, 1772, 22, C.dim, SANS, 400, 'center', 2);
   });
 }
 
@@ -535,6 +569,7 @@ function drawFilm(T) {
   }
   topBar(T, bt); ticker(T);
   if (bt >= END.quote) quote(T, bt);
+  disclaimer(bt);
   const fo = clamp((T - (TOTAL - 2)) / 2); if (fo > 0) withAlpha(fo, () => rect(0, 0, W, H, '#000'));
   ctx.restore();
 }
