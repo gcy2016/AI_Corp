@@ -24,18 +24,18 @@ async function encode(pg, t0, t1, outp, audio) {
     const drums = fs.existsSync(drumWav) ? (await pg.evaluate('DRUMS')).filter(d => d >= t0 && d < t1) : [];
     const fx = [...hits.map(h => [accent, h, 1.1]), ...(fs.existsSync(fallWav) ? falls.filter(([a]) => a >= t0).map(([a]) => [fallWav, a, .9]) : []),
                 ...drums.map(d => [drumWav, d, 1.3])];
-    // 连板锁定区间：原曲和去鼓版（bgm_nodrums.mp3）交叉淡化（0.08 秒切入、0.15 秒切出），区间内只剩连板鼓点
-    const nodrums = path.join(dir, 'bgm_nodrums.mp3');
-    const locks = fs.existsSync(nodrums) ? (await pg.evaluate('LOCKS')).filter(([a, b]) => b > t0 && a < t1) : [];
-    args.push('-ss', t0.toFixed(3), '-t', (t1 - t0).toFixed(3), '-i', audio);
-    if (locks.length) args.push('-ss', t0.toFixed(3), '-t', (t1 - t0).toFixed(3), '-i', nodrums);
-    const fx0 = locks.length ? 3 : 2;   // 音效输入从第几路开始
-    fx.forEach(([f]) => args.push('-i', f));
-    let fc = '';
+    // 连板锁定区间：用 tools/lock_audio.py 在原配乐上把这几秒的鼓和贝斯去掉（只留主旋律，区间外不动，没有接缝）
+    const locks = (await pg.evaluate('LOCKS')).filter(([a, b]) => b > t0 && a < t1);
+    let music = audio;
     if (locks.length) {
-      const Lk = maxOf(locks.map(([a, b]) => `clip((t-${(a - t0).toFixed(3)})/0.08,0,1)*clip((${(b - t0).toFixed(3)}-t)/0.15,0,1)`));
-      fc += `[1:a]volume='1-${Lk}':eval=frame[o1];[2:a]volume='1.15*${Lk}':eval=frame[o2];[o1][o2]amix=inputs=2:normalize=0,`;
-    } else fc += '[1:a]';
+      music = path.join(require('os').tmpdir(), `kline_locked_${process.pid}.wav`);
+      const r = require('child_process').spawnSync('python3', ['-I', path.join(__dirname, '..', 'tools', 'lock_audio.py'), audio, music, ...locks.flat().map(String)], { stdio: 'inherit' });
+      if (r.status) { console.error('lock_audio.py 出错'); process.exit(1) }
+    }
+    args.push('-ss', t0.toFixed(3), '-t', (t1 - t0).toFixed(3), '-i', music);
+    const fx0 = 2;   // 音效输入从第几路开始
+    fx.forEach(([f]) => args.push('-i', f));
+    let fc = '[1:a]';
     fc += `afade=t=out:st=${Math.max(0, fade[0] - t0).toFixed(3)}:d=${(fade[1] - fade[0]).toFixed(3)}`;
     if (falls.length) {
       const M = maxOf(falls.map(([a, b]) => `clip((t-${(a - t0).toFixed(3)})/0.3,0,1)*clip((${(b - t0).toFixed(3)}-t)/1.0,0,1)`));

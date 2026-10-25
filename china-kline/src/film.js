@@ -113,7 +113,7 @@ const fallMix = bt => FALLS.reduce((m, f) => Math.max(m, clamp((bt - f.b0) / .6)
 // 连板鼓点：三板及以上的连板，每封一板叠一声鼓（drum.wav），和“涨停”印章落下是同一帧；两板不加
 const DRUMS = EVENTS.filter(e => e.boardTimes && e.boardTimes.length >= 3).flatMap(e => e.boardTimes.map(b => +B(b).toFixed(3)));
 // 连板锁定区间：从第一声鼓前 0.15 秒到最后一声鼓后 0.4 秒，配乐换成去鼓版（bgm_nodrums.mp3），只听得到连板鼓点
-const LOCKS = EVENTS.filter(e => e.boardTimes && e.boardTimes.length >= 3).map(e => [+(B(e.boardTimes[0]) - .15).toFixed(3), +(B(e.boardTimes[e.boardTimes.length - 1]) + .4).toFixed(3)]);
+const LOCKS = EVENTS.filter(e => e.boardTimes && e.boardTimes.length >= 3).map(e => [+(B(e.boardTimes[0]) - .35).toFixed(3), +(B(e.boardTimes[e.boardTimes.length - 1]) + .4).toFixed(3)]);
 
 // 某根 K 线在拍子 bt 时的状态
 function candleAt(c, bt) {      // 盘中：价格沿 pathAt 抖动，影线随已走过的最高/最低价长出来
