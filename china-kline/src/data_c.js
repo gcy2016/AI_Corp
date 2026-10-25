@@ -19,6 +19,9 @@
     if (po !== null) e.v = v < po ? .6 * v + .4 * pn : Math.max(v, pn * (1 + (v / po - 1) * .5));
     po = v; pn = e.v;
   });
+  // 高光强调音：一件大事直接拉起来的大阳线；陨落：安史之乱，从开元盛世的巅峰跌下来
+  ['开元盛世', '清明上河'].forEach(t => { EVENTS[find(t)].hit = true });
+  Object.assign(EVENTS[find('安史之乱')], { big: ['安史之乱', '755 · 盛世崩塌'], fall: true });
   CHAPTERS[5] = { name: '晚清', b0: 192, mark: '清' };
   PANO_LABELS.length = 0;
   [['大禹治水', '开盘'], ['文景之治', '文景'], ['汉末三国', '三国'], ['开元盛世', '开元'], ['清明上河', '巅峰'],
