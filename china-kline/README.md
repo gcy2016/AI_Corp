@@ -14,7 +14,7 @@
 ## 目录
 | 路径 | 内容 |
 |---|---|
-| `src/film.html` | 入口。双击用浏览器打开就能预览；把配乐放到 `china-kline/bgm.mp3` 会同步播放。空格暂停，←/→ 跳 2 秒 |
+| `src/film.html` | 入口。双击用浏览器打开就能预览；把配乐拷一份到 `china-kline/bgm.mp3` 会同步播放。空格暂停，←/→ 跳 2 秒 |
 | `src/data_b.js` | B 版在 A 版基础上的修改和 1949 年以后的数据；预览时地址后加 `?b`，渲染时命令前加 `VER=b` |
 | `src/data_c.js` | C 版的修改；预览加 `?c`，渲染加 `VER=c` |
 | `src/data.js` | **内容都在这里**：节拍、章节、每根大 K 线（年份、标注、副标题、指数）、全景标注、快讯文字 |
@@ -23,7 +23,7 @@
 | `fonts/` | 思源宋体 / 思源黑体（只含片中用到的字）、JetBrains Mono |
 | `tools/make_fonts.py` | 改了文字后重新生成字体子集 |
 
-配乐不在本仓库，存在 `gcy2016/file-storage` 的 `cn-kline-bgm-20261024` 分支（`china-kline/bgm.mp3`）。
+配乐和 kline-video 技能放在一起：`.claude/skills/kline-video/bgm.mp3`。
 
 ## 踩点
 配乐约 112.8 BPM，第 b 拍的时间 = 0.365 + b × 0.5319 秒，每 32 拍（8 小节，约 17 秒）一个乐句。`data.js` 里所有时间都用拍子写：
@@ -35,10 +35,11 @@
 ## 渲染
     npm i playwright && npx playwright install chromium   # 另需 ffmpeg
     cd src
-    node render.js video ../out/china-kline-A.mp4 ../bgm.mp3   # 整片，约 4 分钟
-    node render.js clip 30 50 ../out/clip.mp4 ../bgm.mp3       # 只渲染 30–50 秒
+    BGM=../../.claude/skills/kline-video/bgm.mp3
+    node render.js video ../out/china-kline-A.mp4 $BGM   # 整片，约 3 分钟
+    node render.js clip 30 50 ../out/clip.mp4 $BGM       # 只渲染 30–50 秒
     node render.js stills 18 60 130                            # 截图 → src/stills/
-    VER=b node render.js video ../out/china-kline-B.mp4 ../bgm.mp3   # B 版整片
+    VER=b node render.js video ../out/china-kline-B.mp4 $BGM   # B 版整片
 
 改了 `data.js` 或 `film.js` 里的中文后，重新生成字体子集（需要 `pip install fonttools brotli` 和 `npm pack @fontsource/noto-serif-sc @fontsource/noto-sans-sc` 解压后的目录）：
 

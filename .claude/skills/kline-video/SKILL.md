@@ -17,7 +17,7 @@ description: 制作“如果 X 是一只股票”式的竖屏 K 线短视频（�
   - `src/film.html`：预览和渲染入口，地址参数 `?b`、`?c`、`?jzy` 选版本。新版本要把 id 加进第 21 行的正则 `(b|c|jzy)`。
   - `src/render.js`：渲染。`VER=<id>` 选版本。
   - `tools/make_fonts.py`：字体子集（片中用到的字）。`tools/beats.py`：测配乐节拍。
-- **配乐**：`gcy2016/file-storage` 仓库 `cn-kline-bgm-20261024` 分支的 `china-kline/bgm.mp3`（3 分 13 秒，112.81 BPM，BEAT = 0.5319，PHASE = 0.365，17.39 秒鼓点进来）。拷到 `china-kline/bgm.mp3`（已在 .gitignore）。这个分支可能已被 Muse 清理；找不到就请用户重新发这首音频，再用 `tools/beats.py` 测节拍。**以后所有 K 线视频默认都用这首配乐**，除非用户特别说明换别的；换了配乐就用 `tools/beats.py` 重新测节拍，改 `data.js` 里的 BEAT、PHASE 和片长。
+- **配乐**：和本技能放在一起，`.claude/skills/kline-video/bgm.mp3`（3 分 13 秒，112.81 BPM，BEAT = 0.5319，PHASE = 0.365，17.39 秒鼓点进来）。渲染时直接用这个路径；预览时拷一份到 `china-kline/bgm.mp3`（已在 .gitignore）就能同步播放。**以后所有 K 线视频默认都用这首配乐**，除非用户特别说明换别的；换了配乐就用 `tools/beats.py` 重新测节拍，改 `data.js` 里的 BEAT、PHASE 和片长。
 - **参考视频的画面结构**（用户给过的两个参考：《如果霍去病是一只股票》《大清》）：大字标题 → 股票信息卡（代码、上市时间、发行价、引言 + “买入”印章）→ 集合竞价 100.00 → 鼓点进来时“开盘” → 交易界面（顶部年份和价格、中间 K 线和事件标注、下方当前名号/朝代 + 大事记、底部快讯滚动条）→ 大字转场 → 全景走势金线 + 复盘报告 → 结束语。红涨绿跌，深色背景。
 
 ## 二、做一个新版本的步骤
@@ -37,12 +37,12 @@ description: 制作“如果 X 是一只股票”式的竖屏 K 线短视频（�
 5. **重新生成字体子集**（新字不在子集里会显示成别的字体）：先 `pip install fonttools brotli`，再在临时目录 `npm pack @fontsource/noto-serif-sc @fontsource/noto-sans-sc` 并解压，然后对 serif 900/700、sans 400/500/700 各跑一次：
    `python tools/make_fonts.py <解压目录> x 900 fonts/NotoSerifSC-900.woff2 src/data.js src/data_b.js src/data_c.js src/data_jzy.js src/data_<id>.js src/film.js`（命令行要列出所有数据文件，别把旧版本的字丢了）。
 6. **先看截图再渲染整片**：`cd china-kline/src && VER=<id> NODE_PATH=$(npm root -g) node render.js stills 3 12 30 50 70 90 110 125 133 140`，用 ffmpeg 拼起来看。检查：开场文字、信息卡引言有没有出框、标注是否重叠、大字转场时机、全景标签和印章有没有压线、复盘数字对不对。动效用 `clip 36 39 <out.mp4>` 渲染一小段，再按 10fps 拆帧看。
-7. **渲染整片**：`VER=<id> NODE_PATH=$(npm root -g) node render.js video ../out/<name>.mp4 ../bgm.mp3`（约 2.5–3.5 分钟）。Playwright 用 Node 版（全局已装，所以要 `NODE_PATH`），不用 Python 版。
+7. **渲染整片**：`VER=<id> NODE_PATH=$(npm root -g) node render.js video ../out/<name>.mp4 ../../.claude/skills/kline-video/bgm.mp3`（约 2.5–3.5 分钟）。Playwright 用 Node 版（全局已装，所以要 `NODE_PATH`），不用 Python 版。
 8. **交付**：视频推到 file-storage 的新分支（见 AI_TEAM.md “例外：Claude 用 git 分支上传”，分支名英文，用 `git init` 建一个只放这个文件的新分支，推完用 `git ls-remote` 核对）；用 SendUserFile 把 mp4 发给用户；代码提交到 AI_Corp 的工作分支。回复里写清：走势分几章、关键数字、停在哪里、哪些是传说或估计、文件链接。删除分支由 Muse 负责，不用问。
 
 ## 三、所有 K 线视频的通用要求（用户定的）
 
-- **配乐**：默认用第一节里那首配乐（file-storage 的 `cn-kline-bgm-20261024` 分支 `china-kline/bgm.mp3`），以后都用这首，除非用户特别说明。只有背景音乐，没有配音。
+- **配乐**：默认用本技能目录里的 `bgm.mp3`，以后都用这首，除非用户特别说明。只有背景音乐，没有配音。
 - **踩点**：所有转场、章节开头、暴涨暴跌、大字都要踩在配乐的拍子上，和参考视频一样。大字放在小节重拍上。
 - **盘中走势**：每根 K 线都不能直接静态出现，要有开盘后的走势：价格上下抖动，影线随走过的最高/最低价逐步长出来，坐标轴跟着缩放，顶部价格跟着跳，最后定在收盘价。大 K 线约 1.5 秒，小 K 线约半秒。
 - **偶尔红绿变色**：约三分之一的 K 线先反向走一段再拉回（阳线中途变绿、阴线中途变红），就像股票由涨转跌、由跌转涨。不是每根都这样。
@@ -57,4 +57,4 @@ description: 制作“如果 X 是一只股票”式的竖屏 K 线短视频（�
 - 字体子集漏字会显示成文泉驿字体，截图里能看出来：标题不是宋体就是漏了。
 - `y` 年份文字前面别加“约”（放进副标题 `s` 里）。
 - 全景 `pano.hi` 要大于最高值，`lo` 要小于最低值，否则金线出框。
-- 渲染前先把 `china-kline/bgm.mp3` 准备好；`render.js` 会按 `AUDIO_FADE` 淡出。
+- 渲染命令最后一个参数是配乐路径，别漏掉，否则出来的视频没有声音；`render.js` 会按 `AUDIO_FADE` 淡出。
