@@ -250,13 +250,25 @@ function chart(T, bt) {
 
   // 事件标注：最近 3 个大 K 线
   const keys = []; for (let i = n - 1; i >= i0 && keys.length < 3; i--) if (CANDLES[i].key >= 0) keys.push(CANDLES[i]);
+  const placed = [];   // 已放好的标注框，新的在前；旧标注撞上就挪到上方或下方
   keys.forEach((c, j) => {
     const e = EVENTS[c.key], s = candleAt(c, bt), x = X(c.i), up = c.c >= c.o;
     const a = easeOut((bt - c.b0) / .8) * (j === 0 ? 1 : j === 1 ? .7 : .4);
+    const anchor = up ? Y(s.h) - 14 : Y(s.l) + 14;
+    const right = x < CH.x0 + 330;
+    const w = Math.max(tw(e.t, 32, SERIF, 900), tw(`${e.y} · ${e.s}`, 18, SANS, 400));
+    const bx0 = right ? x + 22 : x - 22 - w, bx1 = bx0 + w;
+    const box = ty => { const nY = up ? ty - 8 : ty - 20; return [nY - 34, nY + 36]; };
+    const hit = ty => { const [a0, a1] = box(ty); return placed.some(p => bx0 < p[2] && p[0] < bx1 && a0 < p[3] && p[1] < a1); };
+    let ty = up ? Math.max(CH.y0 + 30, anchor - 70) : Math.min(CH.y1 - 20, anchor + 60);
+    if (hit(ty)) {
+      const [t0, t1] = box(ty), off = t0 - ty, h = t1 - t0, cands = [];
+      placed.forEach(p => cands.push(p[1] - 6 - h - off, p[3] + 6 - off));
+      const ok = cands.filter(t => box(t)[0] >= CH.y0 + 4 && box(t)[1] <= CH.y1 - 4 && !hit(t)).sort((p, q) => Math.abs(p - ty) - Math.abs(q - ty));
+      if (ok.length) ty = ok[0];
+    }
+    { const [a0, a1] = box(ty); placed.push([bx0, a0, bx1, a1]); }
     withAlpha(a, () => {
-      const anchor = up ? Y(s.h) - 14 : Y(s.l) + 14;
-      const ty = up ? Math.max(CH.y0 + 30, anchor - 70) : Math.min(CH.y1 - 20, anchor + 60);
-      const right = x < CH.x0 + 330;
       const lx = right ? x + 22 : x - 22, al = right ? 'left' : 'right';
       ctx.strokeStyle = 'rgba(235,231,222,.45)'; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(x, anchor); ctx.lineTo(x, ty - (up ? 0 : 30)); ctx.lineTo(lx, ty - (up ? 0 : 30)); ctx.stroke();
