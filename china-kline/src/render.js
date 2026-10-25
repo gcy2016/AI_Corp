@@ -15,10 +15,12 @@ async function encode(pg, t0, t1, outp, audio) {
   if (audio) {
     // 强调音：和配乐放在同一目录的 accent.wav，在 HITS 的每个时间点叠一次
     // 陨落：配乐在 FALLS 的时间段里发闷（低通滤波的配乐和原配乐交叉淡化，0.3 秒变闷、1 秒恢复），开头叠 fall.wav
-    const dir = path.dirname(audio), accent = path.join(dir, 'accent.wav'), fallWav = path.join(dir, 'fall.wav');
+    const dir = path.dirname(audio), accent = path.join(dir, 'accent.wav'), fallWav = path.join(dir, 'fall.wav'), drumWav = path.join(dir, 'drum.wav');
     const hits = fs.existsSync(accent) ? (await pg.evaluate('HITS')).filter(h => h >= t0 && h < t1) : [];
     const falls = (await pg.evaluate('FALLS.map(f => [f.t0, f.t1])')).filter(([a, b]) => b > t0 && a < t1);
-    const fx = [...hits.map(h => [accent, h, 1.1]), ...(fs.existsSync(fallWav) ? falls.filter(([a]) => a >= t0).map(([a]) => [fallWav, a, .9]) : [])];
+    const drums = fs.existsSync(drumWav) ? (await pg.evaluate('DRUMS')).filter(d => d >= t0 && d < t1) : [];
+    const fx = [...hits.map(h => [accent, h, 1.1]), ...(fs.existsSync(fallWav) ? falls.filter(([a]) => a >= t0).map(([a]) => [fallWav, a, .9]) : []),
+                ...drums.map(d => [drumWav, d, 1.0])];
     args.push('-ss', t0.toFixed(3), '-t', (t1 - t0).toFixed(3), '-i', audio);
     fx.forEach(([f]) => args.push('-i', f));
     let fc = `[1:a]afade=t=out:st=${Math.max(0, fade[0] - t0).toFixed(3)}:d=${(fade[1] - fade[0]).toFixed(3)}`;
@@ -29,7 +31,7 @@ async function encode(pg, t0, t1, outp, audio) {
     fx.forEach(([, h, v], i) => { const ms = Math.round((h - t0) * 1000); fc += `;[${i + 2}:a]adelay=${ms}|${ms},volume=${v}[h${i}]` });
     fc += fx.length ? `;[m]${fx.map((_, i) => `[h${i}]`).join('')}amix=inputs=${fx.length + 1}:normalize=0:duration=first,alimiter=limit=0.95[a]` : ';[m]anull[a]';
     args.push('-filter_complex', fc, '-map', '0:v', '-map', '[a]', '-c:a', 'aac', '-b:a', '192k', '-shortest');
-    console.log('accent hits:', hits.join(', '), '| falls:', falls.map(f => f.join('-')).join(', '));
+    console.log('accent hits:', hits.join(', '), '| falls:', falls.map(f => f.join('-')).join(', '), '| drums:', drums.join(', '));
   }
   args.push('-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', outp);
   const ff = spawn('ffmpeg', args, { stdio: ['pipe', 'inherit', 'inherit'] });

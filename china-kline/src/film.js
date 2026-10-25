@@ -99,6 +99,20 @@ const FALLS = EVENTS.filter(e => e.fall).map(e => {
 });
 const fallMix = bt => FALLS.reduce((m, f) => Math.max(m, clamp((bt - f.b0) / .6) * clamp((f.b1 - bt) / 2)), 0);
 
+// 连板鼓点：三连板及以上时，每个“涨停”印章落下的那一拍叠一声鼓（drum.wav），和 stamps() 的出现时间一致
+const DRUMS = (() => {
+  const out = [];
+  EVENTS.forEach((e, k) => {
+    if (e.last) return;
+    let streak = 0;
+    for (let j = k; j >= 0; j--) { const oo = j ? EVENTS[j - 1].v : 96; if (EVENTS[j].v >= oo * 1.18) streak++; else break }
+    if (streak < 3) return;
+    const start = e.b + (e.big && !e.bigAt ? 3.6 : 0);
+    for (let j = 0; j < Math.min(streak, 5); j++) out.push(+B(start + .25 + j * .25).toFixed(3));
+  });
+  return out;
+})();
+
 // 某根 K 线在拍子 bt 时的状态
 function candleAt(c, bt) {      // 盘中：价格沿 pathAt 抖动，影线随已走过的最高/最低价长出来
   const p = clamp((bt - c.b0) / (c.b1 - c.b0));
@@ -130,9 +144,9 @@ function vignette() {
   const g = ctx.createRadialGradient(W / 2, H * .45, H * .2, W / 2, H * .45, H * .75);
   g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.45)'); rect(0, 0, W, H, g);
 }
-function stamp(label, x, y, color, k, rot = -.12, size = 44) {    // 红/绿印章，k 为出现进度
+function stamp(label, x, y, color, k, rot = -.12, size = 44, speed = 1.6) {    // 红/绿印章，k 为出现进度（拍），speed 越大落得越快
   if (k <= 0) return;
-  const s = lerp(1.9, 1, easeOut(k * 1.6)), a = clamp(k * 3);
+  const s = lerp(1.9, 1, easeOut(k * speed)), a = clamp(k * Math.max(3, speed));
   ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s); ctx.globalAlpha *= a;
   const w = tw(label, size, SERIF, 900, 4) + 28, h = size + 22;
   rrect(-w / 2, -h / 2, w, h, 6, color); rrect(-w / 2 + 5, -h / 2 + 5, w - 10, h - 10, 4, null, 'rgba(255,255,255,.75)', 2);
@@ -374,7 +388,7 @@ function stamps(bt) {
   withAlpha(fade, () => {
     if (r >= 1.18) {
       if (streak >= 2) text(['', '', '二', '三', '四', '五'][Math.min(streak, 5)] + '连板', 300, 560, 46, C.gold2, SERIF, 900, 'center');
-      for (let j = 0; j < Math.min(streak, 3); j++) stamp('涨停', 300, 620 + j * 74, C.red, (age - .25 - j * .25) / 1, -.08);
+      for (let j = 0; j < Math.min(streak, 5); j++) stamp('涨停', 300, 620 + j * 74, C.red, (age - .25 - j * .25) / 1, -.08, 44, streak >= 3 ? 8 : 1.6);   // 三连板以上：印章瞬间落下，和鼓点同一帧
     } else if (r <= .82) {
       for (let j = 0; j < (r <= .6 ? 3 : r <= .72 ? 2 : 1); j++) stamp('跌停', 300, 880 + j * 74, '#159a76', (age - .2 - j * .25) / 1, .08);
     }
