@@ -26,8 +26,11 @@ const CANDLES = [];
     const o = prev, c = e.v, span = Math.abs(c - o);
     const next = k + 1 < EVENTS.length ? EVENTS[k + 1].b : END.title;
     // 大 K 线走约 3 拍（1.5 秒）的“盘中”行情；有 via（同一时期内先涨后跌 / 先跌后涨）的每个途经点多走 1.5 拍
-    const kd = Math.min(next - e.b, 3 + 1.5 * (e.via ? e.via.length : 0));
-    CANDLES.push({ b0: e.b, b1: e.b + kd * .95, o, c, h: Math.max(o, c), l: Math.min(o, c), key: k, via: e.via });
+    let kd = Math.min(next - e.b, 3 + 1.5 * (e.via ? e.via.length : 0));
+    // 踩点：有大字 / 强调音 / 陨落的 K 线，暴涨暴跌的那一下放在大字出现的那一拍（hitB），之后至少再走 1.5 拍
+    const hitB = e.big || e.hit || e.fall ? (e.bigAt || e.b) : null;
+    if (hitB !== null) kd = Math.min(next - e.b - .1, Math.max(kd, (hitB - e.b + 1.5) / .95));
+    CANDLES.push({ b0: e.b, b1: e.b + kd * .95, o, c, h: Math.max(o, c), l: Math.min(o, c), key: k, via: e.via, hitB });
     prev = c;
     for (let b = Math.ceil(e.b + kd); b < next; b++) {   // 大 K 线之后的小 K 线：每拍一根，在目标值附近震荡
       const o2 = prev, c2 = o2 + (e.v - o2) * .3 + o2 * (R() - .5) * .04;
@@ -54,6 +57,15 @@ const CANDLES = [];
 function pathAt(c, u) {
   const env = Math.pow(Math.sin(Math.PI * u), .8);
   let n = 0; c.wave.forEach(([f, ph, w]) => n += Math.sin(u * f * 6.2832 + ph) * w);
+  if (c.hitB !== null && c.hitB !== undefined) {   // 踩点 K 线：hitB 之前蓄势（有 via 就先走到途经点），hitB 那一刻半拍内冲到位，再回落定住
+    const U = clamp((c.hitB - c.b0) / (c.b1 - c.b0)), D = .5 / (c.b1 - c.b0);
+    const pre = c.via ? c.via[0] : c.o, over = c.c + (c.c - pre) * .06;
+    if (u < U) return c.o + (pre - c.o) * easeInOut(u / U) + c.amp * .25 * n * Math.sin(Math.PI * u / U);
+    const k = (u - U) / D;
+    if (k < 1) return pre + (over - pre) * easeOut(k);
+    const r = (u - U - D) / Math.max(1e-6, 1 - U - D);
+    return over + (c.c - over) * easeInOut(r) + c.amp * .15 * n * Math.sin(Math.PI * r);
+  }
   if (c.via) {          // 同一时期内的反转：依次走过开盘 → 途经点 → 收盘
     const P = [c.o, ...c.via, c.c], S = P.length - 1, k = Math.min(Math.floor(u * S), S - 1), v = u * S - k;
     return P[k] + (P[k + 1] - P[k]) * easeInOut(v) + c.amp * .4 * n * env * Math.sin(Math.PI * v);
@@ -154,7 +166,7 @@ const CH = { x0: 40, x1: 950, y0: 450, y1: 1220 };   // K 线绘图区
 // 镜头：画面里能看到多少根 K 线。K 线少时近景，越多越拉远（最多 34 根）；
 // 重大事件（有大字转场，或单根涨跌超过 25%）时推近到约 9 根，停 3 拍后用 5 拍慢慢拉回
 const ZOOM_IN = 9, WIN_MIN = 10, WIN_MAX = 24;
-const MAJOR = EVENTS.map((e, k) => { const o = k ? EVENTS[k - 1].v : 96; return e.big || e.v >= o * 1.25 || e.v <= o * .78 ? e.b : null }).filter(b => b !== null);
+const MAJOR = EVENTS.map((e, k) => { const o = k ? EVENTS[k - 1].v : 96; return e.big || e.hit || e.fall ? (e.bigAt || e.b) : e.v >= o * 1.25 || e.v <= o * .78 ? e.b : null }).filter(b => b !== null);
 function nwin(bt) {
   const n = visibleCount(bt); if (!n) return WIN_MIN;
   const pos = n - 1 + easeOut((bt - CANDLES[n - 1].b0) / .6);
