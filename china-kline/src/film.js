@@ -18,19 +18,6 @@ const fmtP = v => v.toFixed(2);
 
 // ---------- K 线数据（确定性生成） ----------
 EVENTS.forEach(e => { e.raw = e.v; if (!e.abs) { e.v = Math.round(e.v * TREND(e.y)); if (e.via) e.via = e.via.map(v => Math.round(v * TREND(e.y))) } });
-// 连板：连续两根及以上单根涨超 18% 的大 K 线算一组连板。组内 K 线紧挨着（中间不补小 K 线），每根都一下拉到顶、收在最高点（涨停板）
-const LIMIT = 1.18;
-EVENTS.forEach((e, k) => { const o = k ? EVENTS[k - 1].v : 96; e.up = e.v >= o * LIMIT && !e.via && !e.last });
-const BOARD_GROUPS = [];
-EVENTS.forEach((e, k) => {
-  if (!e.up) return;
-  const g = BOARD_GROUPS[BOARD_GROUPS.length - 1];
-  if (g && g.end === k - 1) g.end = k; else BOARD_GROUPS.push({ start: k, end: k });
-});
-BOARD_GROUPS.splice(0, BOARD_GROUPS.length, ...BOARD_GROUPS.filter(g => g.end > g.start));
-BOARD_GROUPS.forEach(g => { for (let k = g.start; k <= g.end; k++) { EVENTS[k].board = k - g.start + 1; EVENTS[k].group = g } });
-const boardTime = e => (e.bigAt || e.b) + .5;          // 这一板拉到顶（封板）的拍子：印章落下
-BOARD_GROUPS.forEach(g => { g.times = []; for (let k = g.start; k <= g.end; k++) g.times.push(boardTime(EVENTS[k])) });
 const CANDLES = [];
 (function build() {
   let s = 20261024; const R = () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
@@ -41,14 +28,11 @@ const CANDLES = [];
     // 大 K 线走约 3 拍（1.5 秒）的“盘中”行情；有 via（同一时期内先涨后跌 / 先跌后涨）的每个途经点多走 1.5 拍
     let kd = Math.min(next - e.b, 3 + 1.5 * (e.via ? e.via.length : 0));
     // 踩点：有大字 / 强调音 / 陨落的 K 线，暴涨暴跌的那一下放在大字出现的那一拍（hitB），之后至少再走 1.5 拍
-    const hitB = e.big || e.hit || e.fall || e.board ? (e.bigAt || e.b) : null;
+    const hitB = e.big || e.hit || e.fall ? (e.bigAt || e.b) : null;
     if (hitB !== null) kd = Math.min(next - e.b - .1, Math.max(kd, (hitB - e.b + 1.5) / .95));
-    const inGroup = e.board && k < (e.group || {}).end;   // 连板组内：K 线一直走到下一板开始，中间不补小 K 线
-    if (inGroup) kd = (next - e.b - .1) / .95;
-    CANDLES.push({ b0: e.b, b1: e.b + kd * .95, o, c, h: Math.max(o, c), l: Math.min(o, c), key: k, via: e.via, hitB, board: !!e.board });
+    CANDLES.push({ b0: e.b, b1: e.b + kd * .95, o, c, h: Math.max(o, c), l: Math.min(o, c), key: k, via: e.via, hitB });
     prev = c;
     if (e.last && !VERSION.live) return;           // 不再交易（如人物去世）：最后一根之后不再补小 K 线，画面定住
-    if (inGroup) return;
     for (let b = Math.ceil(e.b + kd); b < next; b++) {   // 大 K 线之后的小 K 线：每拍一根，在目标值附近震荡
       const o2 = prev, c2 = o2 + (e.v - o2) * .3 + o2 * (R() - .5) * .04;
       CANDLES.push({ b0: b, b1: b + .9, o: o2, c: c2, h: Math.max(o2, c2), l: Math.min(o2, c2), key: -1 });
@@ -76,11 +60,10 @@ function pathAt(c, u) {
   let n = 0; c.wave.forEach(([f, ph, w]) => n += Math.sin(u * f * 6.2832 + ph) * w);
   if (c.hitB !== null && c.hitB !== undefined) {   // 踩点 K 线：hitB 之前蓄势（有 via 就先走到途经点），hitB 那一刻半拍内冲到位，再回落定住
     const U = clamp((c.hitB - c.b0) / (c.b1 - c.b0)), D = .5 / (c.b1 - c.b0);
-    const pre = c.via ? c.via[0] : c.o, over = c.board ? c.c : c.c + (c.c - pre) * .06;
+    const pre = c.via ? c.via[0] : c.o, over = c.c + (c.c - pre) * .06;
     if (u < U) return c.o + (pre - c.o) * easeInOut(u / U) + c.amp * .25 * n * Math.sin(Math.PI * u / U);
     const k = (u - U) / D;
     if (k < 1) return pre + (over - pre) * easeOut(k);
-    if (c.board) return c.c;                       // 涨停板：拉到顶后封住，收在最高点
     const r = (u - U - D) / Math.max(1e-6, 1 - U - D);
     return over + (c.c - over) * easeInOut(r) + c.amp * .15 * n * Math.sin(Math.PI * r);
   }
@@ -117,6 +100,33 @@ const FALLS = EVENTS.filter(e => e.fall).map(e => {
 });
 const fallMix = bt => FALLS.reduce((m, f) => Math.max(m, clamp((bt - f.b0) / .6) * clamp((f.b1 - bt) / 2)), 0);
 
+// 三连板以上的涨停印章每拍落一个（中间有停顿，看得清是怎么连板的）；最多 5 个，并且要在下一根大 K 线出来之前落完
+const STAMP_GAP = 1;
+function stampCount(k, streak) {
+  const e = EVENTS[k], start = e.b + (e.big && !e.bigAt ? 3.6 : 0), next = k + 1 < EVENTS.length ? EVENTS[k + 1].b : END.title;
+  const gap = streak >= 3 ? STAMP_GAP : .25;
+  return Math.max(1, Math.min(streak, 5, Math.floor((next - .2 - start - .25) / gap) + 1));
+}
+// 连板鼓点：三连板及以上时，每个“涨停”印章落下的那一拍叠一声鼓（drum.wav），和 stamps() 的出现时间一致
+const DRUMS = (() => {
+  const out = [];
+  EVENTS.forEach((e, k) => {
+    if (e.last) return;
+    let streak = 0;
+    for (let j = k; j >= 0; j--) { const oo = j ? EVENTS[j - 1].v : 96; if (EVENTS[j].v >= oo * 1.18) streak++; else break }
+    if (streak < 3) return;
+    const start = e.b + (e.big && !e.bigAt ? 3.6 : 0);
+    for (let j = 0; j < stampCount(k, streak); j++) out.push(+B(start + .25 + j * STAMP_GAP).toFixed(3));
+  });
+  return out;
+})();
+
+// 连板锁定区间：从第一声鼓前 0.15 秒到最后一声鼓后 0.4 秒，配乐换成去鼓版（bgm_nodrums.mp3），只听得到连板鼓点
+const LOCKS = (() => {
+  const out = []; let cur = null;
+  DRUMS.forEach(t => { if (cur && t - cur[1] < 1.2) cur[1] = t; else { cur = [t, t]; out.push(cur) } });
+  return out.map(([a, b]) => [+(a - .15).toFixed(3), +(b + .4).toFixed(3)]);
+})();
 
 // 某根 K 线在拍子 bt 时的状态
 function candleAt(c, bt) {      // 盘中：价格沿 pathAt 抖动，影线随已走过的最高/最低价长出来
@@ -384,23 +394,18 @@ function namePanel(bt, k) {
 
 // 涨停 / 跌停印章与连板
 function stamps(bt) {
-  // 连板组：每封一板落一个“涨停”印章（瞬间落下），印章一个个叠起来，“N连板”跟着变；最后一板后约 4 拍淡出
-  const g = BOARD_GROUPS.find(g => bt >= EVENTS[g.start].b && bt < g.times[g.times.length - 1] + 5);
-  if (g) {
-    const done = g.times.filter(t => bt >= t).length, fade = 1 - clamp((bt - g.times[g.times.length - 1] - 4) / 1);
-    withAlpha(fade, () => {
-      if (done >= 2) text(['', '', '二', '三', '四', '五', '六', '七'][Math.min(done, 7)] + '连板', 300, 560, 46, C.gold2, SERIF, 900, 'center');
-      g.times.slice(0, 5).forEach((t, j) => stamp('涨停', 300, 620 + j * 74, C.red, bt - t, -.08, 44, 8));
-    });
-    return;
-  }
   const k = eventIndex(bt); if (k < 0) return;
   const e = EVENTS[k], o = k ? EVENTS[k - 1].v : 96, r = e.v / o;
-  const age = bt - e.b - (e.big && !e.bigAt ? 3.6 : 0); if (age > 5 || age < 0 || e.last) return;   // 有大字转场的，等转场结束再盖章
-  const fade = 1 - clamp((age - 4) / 1);
+  const age = bt - e.b - (e.big && !e.bigAt ? 3.6 : 0); if (age > 6 || age < 0 || e.last) return;   // 有大字转场的，等转场结束再盖章
+  let streak = 0;
+  for (let j = k; j >= 0; j--) { const oo = j ? EVENTS[j - 1].v : 96; if (EVENTS[j].v >= oo * 1.18) streak++; else break }
+  const fade = 1 - clamp((age - 5) / 1);
   withAlpha(fade, () => {
-    if (r >= LIMIT) stamp('涨停', 300, 620, C.red, (age - .25) / 1, -.08);
-    else if (r <= .82) {
+    if (r >= 1.18) {
+      if (streak >= 2) text(['', '', '二', '三', '四', '五'][Math.min(streak, 5)] + '连板', 300, 560, 46, C.gold2, SERIF, 900, 'center');
+      const gap = streak >= 3 ? STAMP_GAP : .25, nS = stampCount(k, streak);
+      for (let j = 0; j < nS; j++) stamp('涨停', 300, 620 + j * 74, C.red, (age - .25 - j * gap) / 1, -.08, 44, streak >= 3 ? 8 : 1.6);   // 三连板以上：每拍落一个，瞬间落下，和鼓点同一帧
+    } else if (r <= .82) {
       for (let j = 0; j < (r <= .6 ? 3 : r <= .72 ? 2 : 1); j++) stamp('跌停', 300, 880 + j * 74, '#159a76', (age - .2 - j * .25) / 1, .08);
     }
   });
@@ -646,11 +651,10 @@ function drawFilm(T) {
   else {
     const k = eventIndex(bt);
     header(bt, k);
-    if (bt < END.title + 2.2) chart(T, bt);
+    if (bt < END.title + 2.2) { chart(T, bt); stamps(bt) }
     if (bt >= END.title + 1.5) panorama(T, bt);
     if (bt < END.report) namePanel(bt, k); else report(bt);
     bigOverlays(bt);
-    if (bt < END.title + 2.2) stamps(bt);   // 印章画在大字上面，大字出现时也看得见
     vignette();
     const fl = 1 - clamp((bt - 32) / .5); if (fl > 0) withAlpha(fl * .5, () => rect(0, 0, W, H, '#fff'));   // 开盘闪白
   }

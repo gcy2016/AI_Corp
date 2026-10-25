@@ -18,14 +18,24 @@ async function encode(pg, t0, t1, outp, audio) {
   if (audio) {
     // 强调音：和配乐放在同一目录的 accent.wav，在 HITS 的每个时间点叠一次
     // 陨落：配乐在 FALLS 的时间段里发闷（低通滤波的配乐和原配乐交叉淡化，0.3 秒变闷、1 秒恢复），开头叠 fall.wav
-    const dir = path.dirname(audio), accent = path.join(dir, 'accent.wav'), fallWav = path.join(dir, 'fall.wav');
+    const dir = path.dirname(audio), accent = path.join(dir, 'accent.wav'), fallWav = path.join(dir, 'fall.wav'), drumWav = path.join(dir, 'drum.wav');
     const hits = fs.existsSync(accent) ? (await pg.evaluate('HITS')).filter(h => h >= t0 && h < t1) : [];
     const falls = (await pg.evaluate('FALLS.map(f => [f.t0, f.t1])')).filter(([a, b]) => b > t0 && a < t1);
-    const fx = [...hits.map(h => [accent, h, 1.1]), ...(fs.existsSync(fallWav) ? falls.filter(([a]) => a >= t0).map(([a]) => [fallWav, a, .9]) : [])];
+    const drums = fs.existsSync(drumWav) ? (await pg.evaluate('DRUMS')).filter(d => d >= t0 && d < t1) : [];
+    const fx = [...hits.map(h => [accent, h, 1.1]), ...(fs.existsSync(fallWav) ? falls.filter(([a]) => a >= t0).map(([a]) => [fallWav, a, .9]) : []),
+                ...drums.map(d => [drumWav, d, 1.3])];
+    // 连板锁定区间：原曲和去鼓版（bgm_nodrums.mp3）交叉淡化（0.08 秒切入、0.15 秒切出），区间内只剩连板鼓点
+    const nodrums = path.join(dir, 'bgm_nodrums.mp3');
+    const locks = fs.existsSync(nodrums) ? (await pg.evaluate('LOCKS')).filter(([a, b]) => b > t0 && a < t1) : [];
     args.push('-ss', t0.toFixed(3), '-t', (t1 - t0).toFixed(3), '-i', audio);
-    const fx0 = 2;   // 音效输入从第几路开始
+    if (locks.length) args.push('-ss', t0.toFixed(3), '-t', (t1 - t0).toFixed(3), '-i', nodrums);
+    const fx0 = locks.length ? 3 : 2;   // 音效输入从第几路开始
     fx.forEach(([f]) => args.push('-i', f));
-    let fc = '[1:a]';
+    let fc = '';
+    if (locks.length) {
+      const Lk = maxOf(locks.map(([a, b]) => `clip((t-${(a - t0).toFixed(3)})/0.08,0,1)*clip((${(b - t0).toFixed(3)}-t)/0.15,0,1)`));
+      fc += `[1:a]volume='1-${Lk}':eval=frame[o1];[2:a]volume='1.15*${Lk}':eval=frame[o2];[o1][o2]amix=inputs=2:normalize=0,`;
+    } else fc += '[1:a]';
     fc += `afade=t=out:st=${Math.max(0, fade[0] - t0).toFixed(3)}:d=${(fade[1] - fade[0]).toFixed(3)}`;
     if (falls.length) {
       const M = maxOf(falls.map(([a, b]) => `clip((t-${(a - t0).toFixed(3)})/0.3,0,1)*clip((${(b - t0).toFixed(3)}-t)/1.0,0,1)`));
@@ -34,7 +44,7 @@ async function encode(pg, t0, t1, outp, audio) {
     fx.forEach(([, h, v], i) => { const ms = Math.round((h - t0) * 1000); fc += `;[${i + fx0}:a]adelay=${ms}|${ms},volume=${v}[h${i}]` });
     fc += fx.length ? `;[m]${fx.map((_, i) => `[h${i}]`).join('')}amix=inputs=${fx.length + 1}:normalize=0:duration=first,alimiter=limit=0.95[a]` : ';[m]anull[a]';
     args.push('-filter_complex', fc, '-map', '0:v', '-map', '[a]', '-c:a', 'aac', '-b:a', '192k', '-shortest');
-    console.log('accent hits:', hits.join(', '), '| falls:', falls.map(f => f.join('-')).join(', '));
+    console.log('accent hits:', hits.join(', '), '| falls:', falls.map(f => f.join('-')).join(', '), '| drums:', drums.join(', '), '| locks:', locks.map(l => l.join('-')).join(', '));
   }
   args.push('-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', outp);
   const ff = spawn('ffmpeg', args, { stdio: ['pipe', 'inherit', 'inherit'] });
