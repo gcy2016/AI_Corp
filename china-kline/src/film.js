@@ -128,9 +128,9 @@ function yRange(bt) {      // 多点采样平均，相当于平滑缩放
 
 function header(bt, k) {
   const y = 96; rect(0, y, W, 250, C.bg);
-  rrect(36, y + 22, 62, 62, 6, C.red); text('民', 67, y + 66, 40, '#fff', SERIF, 900, 'center');
-  text('中华民生', 116, y + 56, 40, C.text, SERIF, 900);
-  text('CHN.4000 · 人民史观板块', 118, y + 84, 18, C.dim);
+  rrect(36, y + 22, 62, 62, 6, C.red); text(TX.seal, 67, y + 66, 40, '#fff', SERIF, 900, 'center');
+  text(TX.name, 116, y + 56, 40, C.text, SERIF, 900);
+  text(TX.code + ' · ' + TX.board, 118, y + 84, 18, C.dim);
   const live = bt < END.title;
   const on = live || VERSION.live;
   ctx.beginPath(); ctx.arc(W - 150, y + 48, 7, 0, 7); ctx.fillStyle = on ? C.green : C.red; ctx.fill();
@@ -148,7 +148,7 @@ function header(bt, k) {
   text(yrText, bc ? 74 : 38, y + 176, 62, C.text, MONO, 700);
   const yx = (bc ? 74 : 38) + tw(yrText, 62, MONO, 700) + 22;
   text(live ? (e.era ? e.era + ' · ' + e.t : e.t) : VERSION.span, yx, y + 146, 26, C.text, SANS, 500);
-  text(live ? '民生指数 · 朝代K' : '全景 · 对数坐标', yx, y + 176, 18, C.dim);
+  text(live ? TX.index + ' · ' + TX.unit : '全景 · 对数坐标', yx, y + 176, 18, C.dim);
   text(fmtP(price), W - 36, y + 170, 68, col, MONO, 700, 'right');
   const pct = (d / ref * 100);
   text(`${up ? '▲' : '▼'} ${up ? '+' : ''}${pct.toFixed(2)}%    ${up ? '+' : ''}${d.toFixed(1)}`, W - 36, y + 208, 20, col, MONO, 500, 'right');
@@ -179,7 +179,7 @@ function chart(T, bt) {
 
   // 标题行
   const ma = (i, m) => { let s = 0, c = 0; for (let j = Math.max(0, i - m + 1); j <= i; j++) { s += candleAt(CANDLES[j], bt).cur; c++ } return s / c };
-  text('民生指数 · 朝代K', 48, 404, 19, C.text, SANS, 500);
+  text(TX.index + ' · ' + TX.unit, 48, 404, 19, C.text, SANS, 500);
   if (n) {
     text(`MA5 ${ma(n - 1, 5).toFixed(1)}`, 220, 404, 17, C.ma5, MONO); text(`MA20 ${ma(n - 1, 20).toFixed(1)}`, 360, 404, 17, C.ma20, MONO);
   }
@@ -261,7 +261,7 @@ function niceStep(x) { const p = Math.pow(10, Math.floor(Math.log10(x))); const 
 function namePanel(bt, k) {
   const y = 1316; rect(0, y - 6, W, 500, C.bg);
   const chI = chapterIndex(bt), ch = CHAPTERS[chI];
-  text('当前朝代', 40, y + 30, 18, C.dim);
+  text(TX.panel, 40, y + 30, 18, C.dim);
   const sw = easeOut((bt - ch.b0) / 1.5);
   withAlpha(sw, () => {
     text(ch.name, 40, y + 96, 54, C.text, SERIF, 900);
@@ -311,8 +311,8 @@ function bigOverlays(bt) {
   const items = [];
   CHAPTERS.forEach((ch, j) => { if (j > 0) items.push({ b: ch.b0, t: ch.name, s: `第 ${j + 1} 章`, col: C.gold2, d: 3 }) });
   EVENTS.forEach(e => { if (e.big) items.push({ b: e.bigAt || e.b, t: e.big[0], s: e.big[1], col: e.v < prevV(e) ? '#7fe3c4' : C.gold2, d: 4 }) });
-  items.push({ b: 32, t: '开盘', s: '约公元前 2070 年 · 夏', col: C.red, d: 2.5 });
-  items.push({ b: END.title, t: '四千年', s: VERSION.span, col: C.gold2, d: 3 });
+  items.push({ b: 32, t: '开盘', s: TX.open, col: C.red, d: 2.5 });
+  items.push({ b: END.title, t: TX.span, s: VERSION.span, col: C.gold2, d: 3 });
   items.forEach(it => {
     const age = bt - it.b; if (age < 0 || age > it.d) return;
     const a = Math.min(easeOut(age / .35), 1 - clamp((age - it.d + .8) / .8));
@@ -333,7 +333,7 @@ function bigOverlays(bt) {
 function intro(T, bt) {
   rect(0, 83, W, H - 83, C.bg); vignette();
   if (bt < 8) {          // 标题逐字出现
-    const lines = ['如果中国历史', '是一只股票'];
+    const lines = TX.title;
     rect(64, 690, 10, 330, C.gold);
     let idx = 0;
     lines.forEach((l, li) => {
@@ -342,19 +342,19 @@ function intro(T, bt) {
         withAlpha(k, () => text(ch, 110 + ci * 132, 830 + li * 160 + (1 - k) * 30, 128, C.text, SERIF, 900));
       });
     });
-    withAlpha(easeOut((bt - 5.8) / 1), () => text('民生指数 · 百姓日子好就涨，苦就跌', 112, 1110, 32, C.gold, SANS, 500));
+    withAlpha(easeOut((bt - 5.8) / 1), () => text(TX.tagline, 112, 1110, 32, C.gold, SANS, 500));
     withAlpha(1 - clamp((bt - 7.4) / .6), () => { });
     return;
   }
   if (bt < 22) {         // 股票信息卡
     const a = easeOut((bt - 8) / .6);
     withAlpha(a, () => {
-      text('如果中国历史是一只股票，', 60, 220, 44, C.text, SERIF, 900);
-      text('它的股价会怎么走？', 60, 286, 44, C.text, SERIF, 900);
+      text(TX.ask[0], 60, 220, 44, C.text, SERIF, 900);
+      text(TX.ask[1], 60, 286, 44, C.text, SERIF, 900);
       rrect(60, 320, 120, 34, 3, C.gold); text('新股发行', 120, 344, 20, '#1a1407', SANS, 700, 'center');
       rect(60, 380, W - 120, 1, C.line);
     });
-    const rows = [['代码', 'CHN.4000'], ['上市时间', '约前2070年 · 夏'], ['发行价', '100.00'], ['板块', '人民史观'], ['计价规则', '日子好就涨 · 苦就跌'], ['交易周期', '四千年']];
+    const rows = TX.rows;
     rows.forEach(([l, v], j) => {
       const k = easeOut((bt - 9 - j * .9) / .5), y = 460 + j * 92;
       withAlpha(k, () => {
@@ -367,9 +367,8 @@ function intro(T, bt) {
     withAlpha(q, () => {
       rrect(60, 1080, W - 120, 380, 6, '#16140f', C.gold, 2);
       text('引言', 96, 1134, 22, C.gold, SANS, 500);
-      text('水能载舟，', 96, 1250, 84, C.text, SERIF, 900);
-      text('亦能覆舟。', 96, 1360, 84, C.text, SERIF, 900);
-      text('——《荀子》', W - 100, 1420, 26, C.dim2, SERIF, 700, 'right');
+      TX.quote.forEach((l, i) => text(l, 96, 1250 + Math.round(i * TX.quoteSize * 1.31) - (TX.quote.length - 2) * 60, TX.quoteSize, C.text, SERIF, 900));
+      text(TX.quoteSrc, W - 100, TX.quote.length > 2 ? 1445 : 1420, 26, C.dim2, SERIF, 700, 'right');
     });
     stamp('买入', 860, 1330, C.red, (bt - 18.5) / 1, -.18, 52);
     return;
@@ -406,7 +405,7 @@ function panorama(T, bt) {
   const appear = easeOut((bt - (END.title + 2.2)) / 1);
   withAlpha(appear, () => {
     rrect(P.x, P.y, P.w, P.h, 4, C.panel, C.line, 1.5);
-    text('民生指数 · 全景', 48, 404, 19, C.text, SANS, 500); text('对数坐标', W - 48, 404, 17, C.dim, SANS, 400, 'right');
+    text(TX.index + ' · 全景', 48, 404, 19, C.text, SANS, 500); text('对数坐标', W - 48, 404, 17, C.dim, SANS, 400, 'right');
     rect(40, 420, W - 80, 1, C.line);
     VERSION.pano.grid.forEach(v => {
       ctx.setLineDash([4, 8]); ctx.strokeStyle = '#262a31'; ctx.beginPath(); ctx.moveTo(60, Y(v)); ctx.lineTo(W - 120, Y(v)); ctx.stroke(); ctx.setLineDash([]);
@@ -448,13 +447,13 @@ function report(bt) {
   const a = easeOut((bt - END.report) / .8);
   withAlpha(a, () => {
     text('复盘报告', 40, y + 52, 38, C.gold2, SERIF, 900);
-    text('CHN.4000 · ' + VERSION.span, 232, y + 50, 18, C.dim);
+    text(TX.code + ' · ' + VERSION.span, 232, y + 50, 18, C.dim);
     rect(40, y + 76, W - 80, 1, C.line);
   });
   const items = [
-    ['存续时间', `${STATS.years}`, '年'], ['历史最高', `${STATS.hi.v}`, `${STATS.hi.era} · ${STATS.hi.y}`],
+    [TX.report[0], `${STATS.years}`, '年'], ['历史最高', `${STATS.hi.v}`, `${STATS.hi.era} · ${STATS.hi.y}`],
     ['区间涨幅', `+${EVENTS[EVENTS.length - 1].v - 100}%`, VERSION.span.replace(' – ', ' → ')], ['最大回撤', `${(STATS.dd * 100).toFixed(0)}%`, VERSION.ddText],
-    ['盛世上涨', `${STATS.up}`, '次 · 单根涨超20%'], ['乱世暴跌', `${STATS.down}`, '次 · 单根跌超20%'],
+    [TX.report[1], `${STATS.up}`, '次 · 单根涨超20%'], [TX.report[2], `${STATS.down}`, '次 · 单根跌超20%'],
   ];
   items.forEach(([l, v, u], j) => {
     const k = easeOut((bt - END.report - 1 - j * .7) / .6);
@@ -474,10 +473,10 @@ function quote(T, bt) {
     rect(0, 0, W, H, '#0b0c10');
     const g = ctx.createRadialGradient(W / 2, 860, 50, W / 2, 860, 700); g.addColorStop(0, 'rgba(217,174,91,.10)'); g.addColorStop(1, 'rgba(0,0,0,0)'); rect(0, 0, W, H, g);
     const l1 = easeOut((bt - END.quote - .3) / 1.2), l2 = easeOut((bt - END.quote - 1.5) / 1.2);
-    withAlpha(l1, () => text('民为邦本', W / 2, 800, 132, C.text, SERIF, 900, 'center', 16));
-    withAlpha(l2, () => text('本固邦宁', W / 2, 980, 132, C.text, SERIF, 900, 'center', 16));
-    withAlpha(easeOut((bt - END.quote - 3) / 1.2), () => text('——《尚书》', W / 2 + 260, 1070, 30, C.dim2, SERIF, 700, 'center'));
-    withAlpha(easeOut((bt - END.quote - 5) / 1.5), () => text('百姓的日子，才是历史真正的 K 线', W / 2, 1250, 36, C.gold, SANS, 500, 'center', 2));
+    withAlpha(l1, () => text(TX.end[0], W / 2, 800, 132, C.text, SERIF, 900, 'center', 16));
+    withAlpha(l2, () => text(TX.end[1], W / 2, 980, 132, C.text, SERIF, 900, 'center', 16));
+    withAlpha(easeOut((bt - END.quote - 3) / 1.2), () => text(TX.endSrc, W / 2 + 260, 1070, 30, C.dim2, SERIF, 700, 'center'));
+    withAlpha(easeOut((bt - END.quote - 5) / 1.5), () => text(TX.endLine, W / 2, 1250, 36, C.gold, SANS, 500, 'center', 2));
     stamp(VERSION.closeStamp, W / 2, 1420, C.red, (bt - END.quote - 8) / 1, -.06, 48);
   });
 }
