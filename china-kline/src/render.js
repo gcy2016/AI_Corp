@@ -18,7 +18,7 @@ async function encode(pg, t0, t1, outp, audio) {
     const dir = path.dirname(audio), accent = path.join(dir, 'accent.wav'), fallWav = path.join(dir, 'fall.wav');
     const hits = fs.existsSync(accent) ? (await pg.evaluate('HITS')).filter(h => h >= t0 && h < t1) : [];
     const falls = (await pg.evaluate('FALLS.map(f => [f.t0, f.t1])')).filter(([a, b]) => b > t0 && a < t1);
-    const fx = [...hits.map(h => [accent, h, .85]), ...(fs.existsSync(fallWav) ? falls.filter(([a]) => a >= t0).map(([a]) => [fallWav, a, .9]) : [])];
+    const fx = [...hits.map(h => [accent, h, 1.1]), ...(fs.existsSync(fallWav) ? falls.filter(([a]) => a >= t0).map(([a]) => [fallWav, a, .9]) : [])];
     args.push('-ss', t0.toFixed(3), '-t', (t1 - t0).toFixed(3), '-i', audio);
     fx.forEach(([f]) => args.push('-i', f));
     let fc = `[1:a]afade=t=out:st=${Math.max(0, fade[0] - t0).toFixed(3)}:d=${(fade[1] - fade[0]).toFixed(3)}`;

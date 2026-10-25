@@ -17,22 +17,21 @@ const prevV = e => { const k = EVENTS.indexOf(e); return k ? EVENTS[k - 1].v : 9
 const fmtP = v => v.toFixed(2);
 
 // ---------- K 线数据（确定性生成） ----------
-EVENTS.forEach(e => { e.raw = e.v; if (!e.abs) e.v = Math.round(e.v * TREND(e.y)) });
+EVENTS.forEach(e => { e.raw = e.v; if (!e.abs) { e.v = Math.round(e.v * TREND(e.y)); if (e.via) e.via = e.via.map(v => Math.round(v * TREND(e.y))) } });
 const CANDLES = [];
 (function build() {
   let s = 20261024; const R = () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
   let prev = 96;
   EVENTS.forEach((e, k) => {
     const o = prev, c = e.v, span = Math.abs(c - o);
-    const h = Math.max(o, c) + span * .1 + Math.max(o, c) * .012 * (1 + R());
-    const l = Math.min(o, c) - span * .1 - Math.min(o, c) * .012 * (1 + R());
     const next = k + 1 < EVENTS.length ? EVENTS[k + 1].b : END.title;
-    const kd = Math.min(3, next - e.b);           // 大 K 线走约 3 拍（1.5 秒）的“盘中”行情
-    CANDLES.push({ b0: e.b, b1: e.b + kd * .95, o, c, h, l, key: k });
+    // 大 K 线走约 3 拍（1.5 秒）的“盘中”行情；有 via（同一时期内先涨后跌 / 先跌后涨）的每个途经点多走 1.5 拍
+    const kd = Math.min(next - e.b, 3 + 1.5 * (e.via ? e.via.length : 0));
+    CANDLES.push({ b0: e.b, b1: e.b + kd * .95, o, c, h: Math.max(o, c), l: Math.min(o, c), key: k, via: e.via });
     prev = c;
     for (let b = Math.ceil(e.b + kd); b < next; b++) {   // 大 K 线之后的小 K 线：每拍一根，在目标值附近震荡
       const o2 = prev, c2 = o2 + (e.v - o2) * .3 + o2 * (R() - .5) * .04;
-      CANDLES.push({ b0: b, b1: b + .9, o: o2, c: c2, h: Math.max(o2, c2) * (1 + R() * .014), l: Math.min(o2, c2) * (1 - R() * .014), key: -1 });
+      CANDLES.push({ b0: b, b1: b + .9, o: o2, c: c2, h: Math.max(o2, c2), l: Math.min(o2, c2), key: -1 });
       prev = c2;
     }
   });
@@ -46,14 +45,19 @@ const CANDLES = [];
     c.sgn = c.c >= c.o ? 1 : -1;
     c.flip = R2() < .35;          // 约三分之一的 K 线盘中先反向走一段，红绿变色
     c.flipAmp = Math.max(span * (.2 + R2() * .15), c.o * .02);
+    // 影线 = 盘中实际走到过的最高价和最低价，不额外加长
     let hi = Math.max(c.o, c.c), lo = Math.min(c.o, c.c);
-    for (let j = 0; j <= 48; j++) { const v = pathAt(c, j / 48); hi = Math.max(hi, v); lo = Math.min(lo, v) }
-    c.h = Math.max(c.h, hi); c.l = Math.min(c.l, lo);
+    for (let j = 0; j <= 240; j++) { const v = pathAt(c, j / 240); hi = Math.max(hi, v); lo = Math.min(lo, v) }
+    c.h = hi; c.l = lo;
   });
 })();
 function pathAt(c, u) {
   const env = Math.pow(Math.sin(Math.PI * u), .8);
   let n = 0; c.wave.forEach(([f, ph, w]) => n += Math.sin(u * f * 6.2832 + ph) * w);
+  if (c.via) {          // 同一时期内的反转：依次走过开盘 → 途经点 → 收盘
+    const P = [c.o, ...c.via, c.c], S = P.length - 1, k = Math.min(Math.floor(u * S), S - 1), v = u * S - k;
+    return P[k] + (P[k + 1] - P[k]) * easeInOut(v) + c.amp * .4 * n * env * Math.sin(Math.PI * v);
+  }
   let v = c.o + (c.c - c.o) * easeInOut(u) + c.amp * n * env;
   if (c.flip) v -= c.sgn * c.flipAmp * Math.sin(Math.PI * Math.min(u / .45, 1));   // 先反向，再拉回
   else v = c.sgn > 0 ? Math.max(v, c.o + c.o * .002 * env) : Math.min(v, c.o - c.o * .002 * env);   // 不变色：只在收盘方向一侧波动
@@ -90,9 +94,8 @@ function candleAt(c, bt) {      // 盘中：价格沿 pathAt 抖动，影线随�
   if (p <= 0) return { p, cur: c.o, h: c.o, l: c.o };
   const cur = pathAt(c, p);
   let h = Math.max(c.o, cur), l = Math.min(c.o, cur);
-  for (let j = 1; j < 16; j++) { const v = pathAt(c, p * j / 16); h = Math.max(h, v); l = Math.min(l, v) }
-  const k = Math.pow(p, 4);       // 临近收盘时影线补齐到最终的最高/最低价
-  return { p, cur, h: lerp(h, Math.max(h, c.h), k), l: lerp(l, Math.min(l, c.l), k) };
+  for (let j = 1; j < 48; j++) { const v = pathAt(c, p * j / 48); h = Math.max(h, v); l = Math.min(l, v) }
+  return { p, cur, h, l };
 }
 const visibleCount = bt => { let n = 0; while (n < CANDLES.length && CANDLES[n].b0 <= bt) n++; return n };
 const eventIndex = bt => { let k = -1; EVENTS.forEach((e, i) => { if (e.b <= bt) k = i }); return k };
@@ -412,12 +415,15 @@ function intro(T, bt) {
     });
     const q = easeOut((bt - 15) / .8);
     withAlpha(q, () => {
-      rrect(60, 1080, W - 120, 380, 6, '#16140f', C.gold, 2);
+      // 引言框按行数排版：标签 → 各行 → 出处，框高跟着变，互不重叠（两行时和原来完全一样）
+      const qs = TX.quoteSize, y0 = 1134 + Math.round(qs * 1.38), step = Math.round(qs * 1.31), yl = y0 + step * (TX.quote.length - 1);
+      rrect(60, 1080, W - 120, yl + 100 - 1080, 6, '#16140f', C.gold, 2);
       text('引言', 96, 1134, 22, C.gold, SANS, 500);
-      TX.quote.forEach((l, i) => text(l, 96, 1250 + Math.round(i * TX.quoteSize * 1.31) - (TX.quote.length - 2) * 60, TX.quoteSize, C.text, SERIF, 900));
-      text(TX.quoteSrc, W - 100, TX.quote.length > 2 ? 1445 : 1420, 26, C.dim2, SERIF, 700, 'right');
+      TX.quote.forEach((l, i) => text(l, 96, y0 + i * step, qs, C.text, SERIF, 900));
+      text(TX.quoteSrc, W - 100, yl + 60, 26, C.dim2, SERIF, 700, 'right');
     });
-    stamp('买入', 860, 1330, C.red, (bt - 18.5) / 1, -.18, 52);
+    const qy = 1134 + Math.round(TX.quoteSize * 1.38) + Math.round(TX.quoteSize * 1.31) * (TX.quote.length - 1);
+    stamp('买入', 860, qy - 30, C.red, (bt - 18.5) / 1, -.18, 52);
     return;
   }
   // 集合竞价

@@ -1,5 +1,5 @@
 """合成两个音效，输出到 .claude/skills/kline-video/（可用第一个参数改目录）
-  accent.wav：“高光时刻”强调音（仿参考视频赤壁之战处）：低频轰鸣 + F 音铜锣长音 + 镲片 + 简单混响
+  （accent.wav 已改用参考视频里提取的原声，见 extract_accent.py；下面合成的强调音只用来复用部分素材）
   fall.wav：“陨落”重击音（仿参考视频吕布白门楼处）：更深的低频重击 + 下坠的音调 + 碎裂噪声；之后配乐发闷由 render.js 处理
   python accent.py [输出目录]
 参考视频里这个音：40–55 Hz 的“咚”约 0.7 秒；基音约 174 Hz（F3），3、4 倍泛音明显，约 2 秒衰减完；开头 1–4 kHz 突然变亮。
@@ -49,7 +49,7 @@ def save(name, out):
         w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes(pcm.tobytes())
     print(d / name, f"{DUR}s")
 
-save('accent.wav', out)
+# accent.wav 现在用的是从参考视频里提取的原声（见 extract_accent.py），这里合成的版本不再保存
 
 # 陨落：70 Hz 滑到 28 Hz 的深重击 + 从 320 Hz 往下坠到 55 Hz 的音调 + 碎裂噪声（中频带通、快衰减）
 f = 28 + 42 * np.exp(-t / .35)
