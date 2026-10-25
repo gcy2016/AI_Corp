@@ -26,18 +26,39 @@ const CANDLES = [];
     const o = prev, c = e.v, span = Math.abs(c - o);
     const h = Math.max(o, c) + span * .1 + Math.max(o, c) * .012 * (1 + R());
     const l = Math.min(o, c) - span * .1 - Math.min(o, c) * .012 * (1 + R());
-    const kd = c < o * .8 ? 1 : 1.5;              // 暴跌更快
-    CANDLES.push({ b0: e.b, b1: e.b + kd, o, c, h, l, key: k });
-    prev = c;
     const next = k + 1 < EVENTS.length ? EVENTS[k + 1].b : END.title;
+    const kd = Math.min(3, next - e.b);           // 大 K 线走约 3 拍（1.5 秒）的“盘中”行情
+    CANDLES.push({ b0: e.b, b1: e.b + kd * .95, o, c, h, l, key: k });
+    prev = c;
     for (let b = Math.ceil(e.b + kd); b < next; b++) {   // 大 K 线之后的小 K 线：每拍一根，在目标值附近震荡
       const o2 = prev, c2 = o2 + (e.v - o2) * .3 + o2 * (R() - .5) * .04;
-      CANDLES.push({ b0: b, b1: b + .7, o: o2, c: c2, h: Math.max(o2, c2) * (1 + R() * .014), l: Math.min(o2, c2) * (1 - R() * .014), key: -1 });
+      CANDLES.push({ b0: b, b1: b + .9, o: o2, c: c2, h: Math.max(o2, c2) * (1 + R() * .014), l: Math.min(o2, c2) * (1 - R() * .014), key: -1 });
       prev = c2;
     }
   });
   CANDLES.forEach((c, i) => { c.i = i; c.ch = CHAPTERS.reduce((a, ch, j) => c.b0 >= ch.b0 ? j : a, 0) });
+  // 盘中走势参数：三组正弦叠加的抖动，开头和结尾收敛到开盘价、收盘价
+  let s2 = 7; const R2 = () => (s2 = (s2 * 1664525 + 1013904223) >>> 0) / 4294967296;
+  CANDLES.forEach(c => {
+    const span = Math.abs(c.c - c.o);
+    c.amp = c.key >= 0 ? Math.max(span * .32, c.o * .03) : Math.max(span * .6, c.o * .012);
+    c.wave = [[2 + R2() * 1.5, R2() * 6.3, .55], [4.5 + R2() * 2, R2() * 6.3, .3], [8 + R2() * 3, R2() * 6.3, .15]];
+    c.sgn = c.c >= c.o ? 1 : -1;
+    c.flip = R2() < .35;          // 约三分之一的 K 线盘中先反向走一段，红绿变色
+    c.flipAmp = Math.max(span * (.2 + R2() * .15), c.o * .02);
+    let hi = Math.max(c.o, c.c), lo = Math.min(c.o, c.c);
+    for (let j = 0; j <= 48; j++) { const v = pathAt(c, j / 48); hi = Math.max(hi, v); lo = Math.min(lo, v) }
+    c.h = Math.max(c.h, hi); c.l = Math.min(c.l, lo);
+  });
 })();
+function pathAt(c, u) {
+  const env = Math.pow(Math.sin(Math.PI * u), .8);
+  let n = 0; c.wave.forEach(([f, ph, w]) => n += Math.sin(u * f * 6.2832 + ph) * w);
+  let v = c.o + (c.c - c.o) * easeInOut(u) + c.amp * n * env;
+  if (c.flip) v -= c.sgn * c.flipAmp * Math.sin(Math.PI * Math.min(u / .45, 1));   // 先反向，再拉回
+  else v = c.sgn > 0 ? Math.max(v, c.o + c.o * .002 * env) : Math.min(v, c.o - c.o * .002 * env);   // 不变色：只在收盘方向一侧波动
+  return v;
+}
 const STATS = (() => {
   let hi = EVENTS[0], lo = EVENTS[0], up = 0, down = 0, peak = EVENTS[0], dd = 0, ddFrom, ddTo;
   EVENTS.forEach((e, k) => {
@@ -52,10 +73,15 @@ const STATS = (() => {
 })();
 
 // 某根 K 线在拍子 bt 时的状态
-function candleAt(c, bt) {
-  const p = easeOut((bt - c.b0) / (c.b1 - c.b0));
-  const cur = lerp(c.o, c.c, p);
-  return { p, cur, h: Math.max(c.o, cur) + (c.h - Math.max(c.o, c.c)) * p, l: Math.min(c.o, cur) - (Math.min(c.o, c.c) - c.l) * p };
+function candleAt(c, bt) {      // 盘中：价格沿 pathAt 抖动，影线随已走过的最高/最低价长出来
+  const p = clamp((bt - c.b0) / (c.b1 - c.b0));
+  if (p >= 1) return { p, cur: c.c, h: c.h, l: c.l };
+  if (p <= 0) return { p, cur: c.o, h: c.o, l: c.o };
+  const cur = pathAt(c, p);
+  let h = Math.max(c.o, cur), l = Math.min(c.o, cur);
+  for (let j = 1; j < 16; j++) { const v = pathAt(c, p * j / 16); h = Math.max(h, v); l = Math.min(l, v) }
+  const k = Math.pow(p, 4);       // 临近收盘时影线补齐到最终的最高/最低价
+  return { p, cur, h: lerp(h, Math.max(h, c.h), k), l: lerp(l, Math.min(l, c.l), k) };
 }
 const visibleCount = bt => { let n = 0; while (n < CANDLES.length && CANDLES[n].b0 <= bt) n++; return n };
 const eventIndex = bt => { let k = -1; EVENTS.forEach((e, i) => { if (e.b <= bt) k = i }); return k };
@@ -298,10 +324,10 @@ function stamps(bt) {
   const fade = 1 - clamp((age - 4) / 1);
   withAlpha(fade, () => {
     if (r >= 1.18) {
-      if (streak >= 2) text(['', '', '二', '三', '四', '五'][Math.min(streak, 5)] + '连板', 760, 560, 46, C.gold2, SERIF, 900, 'center');
-      for (let j = 0; j < Math.min(streak, 3); j++) stamp('涨停', 760, 620 + j * 74, C.red, (age - .25 - j * .25) / 1, -.08);
+      if (streak >= 2) text(['', '', '二', '三', '四', '五'][Math.min(streak, 5)] + '连板', 300, 560, 46, C.gold2, SERIF, 900, 'center');
+      for (let j = 0; j < Math.min(streak, 3); j++) stamp('涨停', 300, 620 + j * 74, C.red, (age - .25 - j * .25) / 1, -.08);
     } else if (r <= .82) {
-      for (let j = 0; j < (r <= .6 ? 3 : r <= .72 ? 2 : 1); j++) stamp('跌停', 760, 880 + j * 74, '#159a76', (age - .2 - j * .25) / 1, .08);
+      for (let j = 0; j < (r <= .6 ? 3 : r <= .72 ? 2 : 1); j++) stamp('跌停', 300, 880 + j * 74, '#159a76', (age - .2 - j * .25) / 1, .08);
     }
   });
 }
