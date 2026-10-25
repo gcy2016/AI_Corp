@@ -137,14 +137,25 @@ function ticker(T) {
 
 // ---------- 交易界面 ----------
 const CH = { x0: 40, x1: 950, y0: 450, y1: 1220 };   // K 线绘图区
-const NWIN = 24;
+// 镜头：画面里能看到多少根 K 线。K 线少时近景，越多越拉远（最多 34 根）；
+// 重大事件（有大字转场，或单根涨跌超过 25%）时推近到约 9 根，停 3 拍后用 5 拍慢慢拉回
+const ZOOM_IN = 9, WIN_MIN = 10, WIN_MAX = 34;
+const MAJOR = EVENTS.map((e, k) => { const o = k ? EVENTS[k - 1].v : 96; return e.big || e.v >= o * 1.25 || e.v <= o * .78 ? e.b : null }).filter(b => b !== null);
+function nwin(bt) {
+  const n = visibleCount(bt); if (!n) return WIN_MIN;
+  const pos = n - 1 + easeOut((bt - CANDLES[n - 1].b0) / .6);
+  const base = clamp(pos + 2, WIN_MIN, WIN_MAX);
+  let z = 0;
+  MAJOR.forEach(b => { const a = bt - b; if (a > -.3 && a < 9) z = Math.max(z, a < .7 ? easeOut((a + .3) / 1) : a < 4 ? 1 : 1 - easeInOut((a - 4) / 5)) });
+  return lerp(base, Math.min(base, ZOOM_IN), z);
+}
 
 function yRangeRaw(bt) {
   const n = visibleCount(bt); if (!n) return [90, 110];
   const last = CANDLES[n - 1], frac = easeOut((bt - last.b0) / .6);
   const pos = n - 1 + frac;
   let lo = 1e9, hi = -1e9;
-  for (let i = Math.max(0, Math.floor(pos - NWIN)); i < n; i++) { const s = candleAt(CANDLES[i], bt); lo = Math.min(lo, s.l); hi = Math.max(hi, s.h) }
+  for (let i = Math.max(0, Math.floor(pos - nwin(bt))); i < n; i++) { const s = candleAt(CANDLES[i], bt); lo = Math.min(lo, s.l); hi = Math.max(hi, s.h) }
   const pad = (hi - lo) * .14 + 4; return [lo - pad, hi + pad * 1.8];
 }
 function yRange(bt) {      // 多点采样平均，相当于平滑缩放
@@ -198,7 +209,7 @@ function chart(T, bt) {
   withAlpha(.045, () => text(CHAPTERS[chI].mark, W / 2, 1060, 560, C.text, SERIF, 900, 'center'));
 
   const last = CANDLES[Math.max(0, n - 1)], frac = n ? easeOut((bt - last.b0) / .6) : 0;
-  const pos = n - 1 + frac, sp = (CH.x1 - CH.x0) / NWIN;
+  const pos = n - 1 + frac, NW = nwin(bt), sp = (CH.x1 - CH.x0) / NW;
   const X = i => CH.x1 - sp * .7 - (pos - i) * sp;
   const [lo, hi] = yRange(bt);
   const Y = v => CH.y1 - (v - lo) / (hi - lo) * (CH.y1 - CH.y0);
@@ -221,14 +232,14 @@ function chart(T, bt) {
   }
 
   ctx.save(); ctx.beginPath(); ctx.rect(CH.x0 - 6, CH.y0 - 40, CH.x1 - CH.x0 + 12, CH.y1 - CH.y0 + 60); ctx.clip();
-  const i0 = Math.max(0, Math.floor(pos - NWIN - 1));
+  const i0 = Math.max(0, Math.floor(pos - NW - 1));
   // 均线
   [[5, C.ma5, .55], [20, C.ma20, .9]].forEach(([m, col, a]) => {
     ctx.beginPath(); for (let i = i0; i < n; i++) { const x = X(i), y = Y(ma(i, m)); i === i0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y) }
     ctx.strokeStyle = col; ctx.globalAlpha = a; ctx.lineWidth = 2; ctx.stroke(); ctx.globalAlpha = 1;
   });
   // K 线
-  const bw = sp * .62;
+  const bw = Math.min(sp * .62, 64);
   for (let i = i0; i < n; i++) {
     const c = CANDLES[i], s = candleAt(c, bt), x = X(i), up = s.cur >= c.o, col = up ? C.red : C.green;
     ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, Y(s.h)); ctx.lineTo(x, Y(s.l)); ctx.stroke();
