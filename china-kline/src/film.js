@@ -159,7 +159,7 @@ function stamp(label, x, y, color, k, rot = -.12, size = 44, speed = 1.6) {    /
 // ---------- 顶栏 / 快讯 ----------
 function topBar(T, bt) {
   rect(0, 0, W, 82, C.bg);
-  text('历史交易所', 36, 52, 24, C.gold, SANS, 500); text('终端 · 新股', 170, 52, 22, C.dim);
+  text(TX.exchange || '历史交易所', 36, 52, 24, C.gold, SANS, 500); text('终端 · 新股', 170, 52, 22, C.dim);
   const st = bt < 32 ? '集合竞价' : bt < END.title || VERSION.live ? '连续竞价' : '已休市';
   const sw = tw(st, 20, SANS, 700) + 20;
   const clock = new Date((9 * 3600 + 15 * 60 + T * 3) * 1000).toISOString().slice(11, 19);
