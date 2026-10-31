@@ -302,10 +302,11 @@ while ($true) {
     }
     try { Ensure-Worker } catch { Write-Log 'ERROR' "worker start failed: $($_.Exception.Message)" }
 
-    # github.com 的 hosts 固定 IP 会失效，定期体检并在失效时自动换。
-    # 体检单独起进程，不阻塞轮询（全失效时要试 8 个 IP，约 30 秒）。
+    # github.com 的 hosts 体检。
+    # 默认关闭（hostsAutoCheck=false）：实测线路是"随机丢包"（同一 IP 连测 6 次只成功 1 次），
+    # 换 IP 治不了，反而增加抖动。需要时手动跑 ds-hosts.ps1 -Check。
     try {
-        if (((Get-Date) - $lastHostCheck).TotalSeconds -ge [int]$Cfg.githubHostsCheckSeconds) {
+        if ([bool]$Cfg.hostsAutoCheck -and ((Get-Date) - $lastHostCheck).TotalSeconds -ge [int]$Cfg.githubHostsCheckSeconds) {
             $lastHostCheck = Get-Date
             Start-Process -FilePath 'powershell.exe' `
                 -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $Root 'ds-hosts.ps1'), '-Check') `
