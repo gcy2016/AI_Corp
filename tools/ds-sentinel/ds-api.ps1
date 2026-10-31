@@ -44,16 +44,40 @@ if ($Path -notmatch '^https?://') {
     $uri = $Path
 }
 
-$req = New-Object System.Net.Http.HttpRequestMessage($Method, $uri)
-if ($Body) {
-    $req.Content = New-Object System.Net.Http.StringContent($Body, [Text.Encoding]::UTF8, 'application/json')
+# 线路丢包严重（实测同一 IP 连测 6 次只有 1 次成功），所以网络失败要重试
+$attempt = 0
+$maxAttempts = [Math]::Max(1, [int]$Cfg.httpRetryCount)
+$delay = [int]$Cfg.httpRetryDelaySeconds
+$resp = $null
+$text = ''
+
+while ($attempt -lt $maxAttempts) {
+    $attempt++
+    try {
+        $req = New-Object System.Net.Http.HttpRequestMessage($Method, $uri)
+        if ($Body) {
+            $req.Content = New-Object System.Net.Http.StringContent($Body, [Text.Encoding]::UTF8, 'application/json')
+        }
+        $resp = $client.SendAsync($req).Result
+        $text = $resp.Content.ReadAsStringAsync().Result
+        if ($resp.IsSuccessStatusCode) { break }
+        $code = [int]$resp.StatusCode
+        # 4xx（除 429）是请求本身的问题，重试没用
+        if ($code -ge 400 -and $code -lt 500 -and $code -ne 429) { break }
+    } catch {
+        $resp = $null
+        $text = ''
+    }
+    if ($attempt -lt $maxAttempts) { Start-Sleep -Seconds $delay }
 }
 
-$resp = $client.SendAsync($req).Result
-$text = $resp.Content.ReadAsStringAsync().Result
+if ($null -eq $resp) {
+    [Console]::Error.WriteLine("network failure after $attempt attempt(s)")
+    exit 2
+}
 
 if (-not $resp.IsSuccessStatusCode) {
-    [Console]::Error.WriteLine("HTTP $([int]$resp.StatusCode) $($resp.ReasonPhrase)")
+    [Console]::Error.WriteLine("HTTP $([int]$resp.StatusCode) $($resp.ReasonPhrase) after $attempt attempt(s)")
     [Console]::Error.WriteLine($text)
     exit 1
 }
