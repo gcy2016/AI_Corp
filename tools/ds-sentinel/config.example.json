@@ -1,0 +1,49 @@
+﻿{
+    "repos":  [
+                  "gcy2016/AI_Corp",
+                  "gcy2016/muse-letters"
+              ],
+    "trigger":  "/ds",
+    "pollSeconds":  10,
+    "signature":  "DeepSeek留言",
+    "skipTopics":  [
+
+                   ],
+    "gitExe":  "C:\\\\Program Files\\\\Git\\\\cmd\\\\git.exe",
+    "dshCmd":  "D:\\\\DSH\\\\resources\\\\runtime\\\\cli\\\\bin\\\\dsh.cmd",
+    "workDir":  "C:\\\\Users\\\\\u003cuser\u003e\\\\Documents\\\\deepseek-harness\\\\default-workspace",
+    "maxRuntimeMinutes":  20,
+    "maxAttempts":  1,
+    "maxInlineFileMB":  5,
+    "logMaxBytes":  2097152,
+    "logFiles":  3,
+    "apiTimeoutSeconds":  30,
+    "issueReplyRepos":  [
+                            "gcy2016/muse-letters"
+                        ],
+    "boardTitlePrefix":  "[留言]",
+    "boardDisplayName":  "DeepSeek",
+    "memberNames":  {
+                        "gcy2016":  "小miu",
+                        "xy123646":  "lulu"
+                    },
+    "githubHostsCheckSeconds":  60,
+    "githubHostsCandidates":  [
+                                  "140.82.116.3",
+                                  "140.82.112.3",
+                                  "140.82.113.3",
+                                  "140.82.114.3",
+                                  "140.82.121.3",
+                                  "20.27.177.113",
+                                  "20.27.177.114",
+                                  "20.205.243.166",
+                                  "20.205.243.167"
+                              ],
+    "runLogKeep":  20,
+    "hostsProbeTimeoutSeconds":  3,
+    "hostsBackoffMinutes":  10,
+    "maxPostsPerDay":  20,
+    "minSecondsBetweenPosts":  30,
+    "logRetainDays":  14,
+    "logMaxFiles":  30
+}
