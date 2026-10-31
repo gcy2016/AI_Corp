@@ -42,14 +42,16 @@ function Get-CurrentPin {
 }
 
 # 真实可用 = TCP 能通 + TLS 握手成功 + 能把一个 HTTP 响应头读回来
-function Test-Ip {
+# 返回耗时（秒）；-1 表示不可用
+function Measure-Ip {
     param([string]$Ip)
-    if (-not $Ip) { return $false }
+    if (-not $Ip) { return -1 }
     $client = New-Object Net.Sockets.TcpClient
+    $sw = [Diagnostics.Stopwatch]::StartNew()
     try {
         $ar = $client.BeginConnect($Ip, 443, $null, $null)
-        if (-not $ar.AsyncWaitHandle.WaitOne([int]$Cfg.hostsProbeTimeoutSeconds * 1000)) { return $false }
-        if (-not $client.Connected) { return $false }
+        if (-not $ar.AsyncWaitHandle.WaitOne([int]$Cfg.hostsProbeTimeoutSeconds * 1000)) { return -1 }
+        if (-not $client.Connected) { return -1 }
 
         $ssl = New-Object Net.Security.SslStream($client.GetStream(), $false)
         $ssl.ReadTimeout = [int]$Cfg.hostsProbeTimeoutSeconds * 1000
@@ -61,14 +63,43 @@ function Test-Ip {
 
         $buf = New-Object byte[] 256
         $n = $ssl.Read($buf, 0, $buf.Length)
-        if ($n -le 0) { return $false }
+        if ($n -le 0) { return -1 }
         $head = [Text.Encoding]::ASCII.GetString($buf, 0, $n)
-        return ($head -match '^HTTP/1\.[01] 200')
+        if ($head -notmatch '^HTTP/1\.[01] 200') { return -1 }
+        $sw.Stop()
+        return [math]::Round($sw.Elapsed.TotalSeconds, 2)
     } catch {
-        return $false
+        return -1
     } finally {
         try { $client.Close() } catch { }
     }
+}
+
+function Test-Ip {
+    param([string]$Ip)
+    return ((Measure-Ip $Ip) -ge 0)
+}
+
+# 不钉 hosts 时，运营商会给哪个 IP
+function Get-DnsIp {
+    foreach ($srv in @($Cfg.hostsDnsServers)) {
+        try {
+            $ips = @(Resolve-DnsName -Name 'github.com' -Type A -Server $srv -ErrorAction Stop |
+                Where-Object { $_.IPAddress } | Select-Object -ExpandProperty IPAddress)
+            if ($ips.Count -gt 0) { return $ips[0] }
+        } catch { }
+    }
+    return ''
+}
+
+function Remove-Pin {
+    $lines = @(Get-Content $HostsFile -ErrorAction SilentlyContinue)
+    $kept = $lines | Where-Object {
+        $_ -notmatch '^\s*\d+\.\d+\.\d+\.\d+\s+(www\.)?github\.com\s*$' -and
+        $_ -notmatch [regex]::Escape($Marker)
+    }
+    [IO.File]::WriteAllLines($HostsFile, @($kept), (New-Object Text.UTF8Encoding($false)))
+    ipconfig /flushdns | Out-Null
 }
 
 function Set-Pin {
@@ -119,19 +150,65 @@ if (Test-Path $BackoffFile) {
     }
 }
 
-# 连续两次都失败才判定失效，避免偶发抖动导致换 IP
-if ((Test-Ip $current) -or (Test-Ip $current)) {
+# 连续两次都失败才判定失效，避免偶发抖动
+$pinT = -1
+if ($current) {
+    $pinT = Measure-Ip $current
+    if ($pinT -lt 0) { $pinT = Measure-Ip $current }
+}
+
+# 不钉的话运营商会给哪个 IP，以及它快不快
+$dnsIp = ''
+$dnsT = -1
+if ([bool]$Cfg.hostsPreferDns) {
+    $dnsIp = Get-DnsIp
+    if ($dnsIp) {
+        if ($dnsIp -eq $current) { $dnsT = $pinT }
+        else { $dnsT = Measure-Ip $dnsIp }
+    }
+}
+
+$pinOk = ($current -ne '') -and ($pinT -ge 0)
+$dnsOk = ($dnsT -ge 0)
+
+# 钉的能用
+if ($pinOk) {
+    # 默认解析明显更快 → 撤掉钉，回到 DNS
+    if ($dnsOk -and $dnsIp -ne $current -and
+        $pinT -gt [double]$Cfg.hostsSlowFloorSeconds -and
+        (($dnsT * [double]$Cfg.hostsSlowRatio) -lt $pinT)) {
+        Remove-Pin
+        Write-Log 'INFO' "unpinned: dns '$dnsIp' (${dnsT}s) much faster than pin '$current' (${pinT}s)"
+        "unpinned: $current -> dns ($dnsIp)"
+        exit 0
+    }
     Remove-Item $BackoffFile -Force -ErrorAction SilentlyContinue
     exit 0
 }
 
-Write-Log 'WARN' "pin '$current' is dead, probing candidates"
+# 钉的不能用（或本来没钉），但系统默认解析能用 → 不要钉
+if ($dnsOk -and $dnsIp -ne $current) {
+    if ($current) {
+        Remove-Pin
+        Write-Log 'WARN' "pin '$current' is dead but dns '$dnsIp' works; unpinned"
+        "unpinned (dns works: $dnsIp)"
+    }
+    Remove-Item $BackoffFile -Force -ErrorAction SilentlyContinue
+    exit 0
+}
 
-# 第一个能用的就用，不再全量探测
+Write-Log 'WARN' "pin '$current' unusable and dns is not better, probing candidates"
+
+# 全部候选都测一遍，选最快的（网络抖动大，取第一个容易选到慢的）
 $best = $null
+$bestT = 999.0
+$probed = 0
 foreach ($ip in @($Cfg.githubHostsCandidates)) {
     if ($ip -eq $current) { continue }
-    if (Test-Ip $ip) { $best = $ip; break }
+    if ($probed -ge 5) { break }
+    $probed++
+    $t = Measure-Ip $ip
+    if ($t -ge 0 -and $t -lt $bestT) { $bestT = $t; $best = $ip }
 }
 
 if (-not $best) {
