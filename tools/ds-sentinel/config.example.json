@@ -40,10 +40,20 @@
                                   "20.205.243.167"
                               ],
     "runLogKeep":  20,
-    "hostsProbeTimeoutSeconds":  3,
+    "hostsProbeTimeoutSeconds":  8,
     "hostsBackoffMinutes":  10,
     "maxPostsPerDay":  20,
     "minSecondsBetweenPosts":  30,
     "logRetainDays":  14,
-    "logMaxFiles":  30
+    "logMaxFiles":  30,
+    "hostsPreferDns":  true,
+    "hostsDnsServers":  [
+                            "223.5.5.5",
+                            "119.29.29.29"
+                        ],
+    "hostsSlowRatio":  3,
+    "hostsSlowFloorSeconds":  2,
+    "hostsAutoCheck":  false,
+    "httpRetryCount":  3,
+    "httpRetryDelaySeconds":  2
 }
